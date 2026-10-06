@@ -2,7 +2,7 @@
 
 - **Base API URL:** `https://equipment-booking-api.medcard-api.workers.dev/api`
 - **Result:** 32 passed, 0 failed (32 cases)
-- **Run at:** 2026-10-06T08:26:24.532Z (local time: Tue Oct 06 2026 15:26:24 GMT+0700 (Indochina Time))
+- **Run at:** 2026-10-06T08:37:18.146Z (local time: Tue Oct 06 2026 15:37:18 GMT+0700 (Indochina Time))
 - **HTTP client:** curl 8.4.0 (x86_64-w64-mingw32) libcurl/8.4.0 Schannel zlib/1.3 brotli/1.1.0 zstd/1.5.5 libidn2/2.3.4 libpsl/0.21.2 (+libidn2/2.3.3) libssh2/1.11.0
 - **How it was run:** `npm test -- https://equipment-booking-api.medcard-api.workers.dev/api` (`tests/run-tests.mjs` starts one real `curl` process per request and records what it printed)
 - **Server under test:** the deployed Cloudflare Worker with its remote D1 database
@@ -24,15 +24,15 @@ Test data: every booking is dated 2030 and marked `[api-test]` in `purpose`. 0 l
 | 1 | List equipment | `GET /equipment` | 200 | 200 | PASS |
 | 2 | Create a booking | `POST /bookings` | 201 | 201 | PASS |
 | 3 | List bookings | `GET /bookings` | 200 | 200 | PASS |
-| 4 | Get one booking | `GET /bookings/9b5614a6-099b-4e8c-8f0f-babbf682535b` | 200 | 200 | PASS |
-| 5 | Update a booking (partial) | `PATCH /bookings/9b5614a6-099b-4e8c-8f0f-babbf682535b` | 200 | 200 | PASS |
+| 4 | Get one booking | `GET /bookings/dea83509-5673-46a2-b46f-b0fc2a8546e6` | 200 | 200 | PASS |
+| 5 | Update a booking (partial) | `PATCH /bookings/dea83509-5673-46a2-b46f-b0fc2a8546e6` | 200 | 200 | PASS |
 | 6 | Missing required fields | `POST /bookings` | 400 | 400 | PASS |
 | 7 | Start time not before end time | `POST /bookings` | 400 | 400 | PASS |
 | 8 | Value that is not a date-time | `POST /bookings` | 400 | 400 | PASS |
 | 9 | Impossible calendar date (30 February) | `POST /bookings` | 400 | 400 | PASS |
 | 10 | Malformed JSON body | `POST /bookings` | 400 | 400 | PASS |
-| 11 | Update that makes the time range invalid | `PATCH /bookings/9b5614a6-099b-4e8c-8f0f-babbf682535b` | 400 | 400 | PASS |
-| 12 | Update with nothing to change | `PATCH /bookings/9b5614a6-099b-4e8c-8f0f-babbf682535b` | 400 | 400 | PASS |
+| 11 | Update that makes the time range invalid | `PATCH /bookings/dea83509-5673-46a2-b46f-b0fc2a8546e6` | 400 | 400 | PASS |
+| 12 | Update with nothing to change | `PATCH /bookings/dea83509-5673-46a2-b46f-b0fc2a8546e6` | 400 | 400 | PASS |
 | 13 | Unknown equipment | `POST /bookings` | 404 | 404 | PASS |
 | 14 | Unknown booking id | `GET /bookings/does-not-exist` | 404 | 404 | PASS |
 | 15 | Update an unknown booking | `PATCH /bookings/does-not-exist` | 404 | 404 | PASS |
@@ -40,19 +40,19 @@ Test data: every booking is dated 2030 and marked `[api-test]` in `purpose`. 0 l
 | 17 | Overlapping booking (create) | `POST /bookings` | 409 | 409 | PASS |
 | 18 | Same time, different equipment | `POST /bookings` | 201 | 201 | PASS |
 | 19 | Back-to-back booking | `POST /bookings` | 201 | 201 | PASS |
-| 20 | Overlapping booking (update the time) | `PATCH /bookings/fa55d278-974c-4a72-b2b2-286ac2ebd8a8` | 409 | 409 | PASS |
-| 21 | Overlapping booking (update the equipment) | `PATCH /bookings/7968d6c4-143a-4c62-8be4-7a66301c3cb6` | 409 | 409 | PASS |
-| 22 | Update to unknown equipment | `PATCH /bookings/7968d6c4-143a-4c62-8be4-7a66301c3cb6` | 404 | 404 | PASS |
+| 20 | Overlapping booking (update the time) | `PATCH /bookings/2230fd4a-e3a9-46e7-ab34-ecc2cab9ed8e` | 409 | 409 | PASS |
+| 21 | Overlapping booking (update the equipment) | `PATCH /bookings/8c6db97b-0b43-4903-b402-43547681c47f` | 409 | 409 | PASS |
+| 22 | Update to unknown equipment | `PATCH /bookings/8c6db97b-0b43-4903-b402-43547681c47f` | 404 | 404 | PASS |
 | 23 | Simultaneous requests for the same slot | `40 rounds x 20 simultaneous POST /bookings` | 40 x 201 (one per round), 760 x 409 | 40 x 201, 760 x 409 | PASS |
 | 24 | SQL injection attempt in a field | `POST /bookings` | 201 | 201 | PASS |
 | 25 | SQL injection attempt in the URL | `GET /bookings/x' OR '1'='1` | 404 | 404 | PASS |
-| 26 | Table intact after the injection attempts | `GET /bookings/4907bd96-4bad-4274-ad2a-67845f8d32d5` | 200 | 200 | PASS |
+| 26 | Table intact after the injection attempts | `GET /bookings/95232ccd-9a84-4f38-bf9c-6223554049bc` | 200 | 200 | PASS |
 | 27 | Time zone offset is normalised to UTC | `POST /bookings` | 201 | 201 | PASS |
 | 28 | CORS preflight | `OPTIONS /bookings` | 204 | 204 | PASS |
 | 29 | CORS headers on an error response | `GET /bookings/does-not-exist` | 404 | 404 | PASS |
-| 30 | Delete a booking | `DELETE /bookings/9b5614a6-099b-4e8c-8f0f-babbf682535b` | 204 | 204 | PASS |
-| 31 | Deleted booking is gone | `GET /bookings/9b5614a6-099b-4e8c-8f0f-babbf682535b` | 404 | 404 | PASS |
-| 32 | Delete the same booking again | `DELETE /bookings/9b5614a6-099b-4e8c-8f0f-babbf682535b` | 404 | 404 | PASS |
+| 30 | Delete a booking | `DELETE /bookings/dea83509-5673-46a2-b46f-b0fc2a8546e6` | 204 | 204 | PASS |
+| 31 | Deleted booking is gone | `GET /bookings/dea83509-5673-46a2-b46f-b0fc2a8546e6` | 404 | 404 | PASS |
+| 32 | Delete the same booking again | `DELETE /bookings/dea83509-5673-46a2-b46f-b0fc2a8546e6` | 404 | 404 | PASS |
 
 ## Details
 
@@ -91,7 +91,7 @@ HTTP/1.1 201 Created
 content-type: application/json
 access-control-allow-origin: *
 
-{"id":"9b5614a6-099b-4e8c-8f0f-babbf682535b","equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T09:00:00.000Z","endAt":"2030-01-15T11:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:26:25.840Z","updatedAt":"2026-10-06T08:26:25.840Z"}
+{"id":"dea83509-5673-46a2-b46f-b0fc2a8546e6","equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T09:00:00.000Z","endAt":"2030-01-15T11:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:37:19.699Z","updatedAt":"2026-10-06T08:37:19.699Z"}
 ```
 
 ### 3. List bookings: PASS
@@ -109,7 +109,7 @@ HTTP/1.1 200 OK
 content-type: application/json
 access-control-allow-origin: *
 
-[{"id":"9b5614a6-099b-4e8c-8f0f-babbf682535b","equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T09:00:00.000Z","endAt":"2030-01-15T11:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:26:25.840Z","updatedAt":"2026-10-06T08:26:25.840Z"}]
+[{"id":"dea83509-5673-46a2-b46f-b0fc2a8546e6","equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T09:00:00.000Z","endAt":"2030-01-15T11:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:37:19.699Z","updatedAt":"2026-10-06T08:37:19.699Z"}]
 ```
 
 ### 4. Get one booking: PASS
@@ -119,7 +119,7 @@ A booking can be fetched by id.
 Expected: 200. Actual: 200.
 
 ```bash
-curl -i https://equipment-booking-api.medcard-api.workers.dev/api/bookings/9b5614a6-099b-4e8c-8f0f-babbf682535b
+curl -i https://equipment-booking-api.medcard-api.workers.dev/api/bookings/dea83509-5673-46a2-b46f-b0fc2a8546e6
 ```
 
 ```http
@@ -127,7 +127,7 @@ HTTP/1.1 200 OK
 content-type: application/json
 access-control-allow-origin: *
 
-{"id":"9b5614a6-099b-4e8c-8f0f-babbf682535b","equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T09:00:00.000Z","endAt":"2030-01-15T11:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:26:25.840Z","updatedAt":"2026-10-06T08:26:25.840Z"}
+{"id":"dea83509-5673-46a2-b46f-b0fc2a8546e6","equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T09:00:00.000Z","endAt":"2030-01-15T11:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:37:19.699Z","updatedAt":"2026-10-06T08:37:19.699Z"}
 ```
 
 ### 5. Update a booking (partial): PASS
@@ -137,7 +137,7 @@ PATCH changes only the fields sent. Extending the end time overlaps the booking'
 Expected: 200. Actual: 200.
 
 ```bash
-curl -i -X PATCH https://equipment-booking-api.medcard-api.workers.dev/api/bookings/9b5614a6-099b-4e8c-8f0f-babbf682535b \
+curl -i -X PATCH https://equipment-booking-api.medcard-api.workers.dev/api/bookings/dea83509-5673-46a2-b46f-b0fc2a8546e6 \
   -H 'Content-Type: application/json' \
   -d '{"endAt":"2030-01-15T12:00:00.000Z","purpose":"[api-test] Rescheduled presentation"}'
 ```
@@ -147,7 +147,7 @@ HTTP/1.1 200 OK
 content-type: application/json
 access-control-allow-origin: *
 
-{"id":"9b5614a6-099b-4e8c-8f0f-babbf682535b","equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T09:00:00.000Z","endAt":"2030-01-15T12:00:00.000Z","purpose":"[api-test] Rescheduled presentation","createdAt":"2026-10-06T08:26:25.840Z","updatedAt":"2026-10-06T08:26:27.886Z"}
+{"id":"dea83509-5673-46a2-b46f-b0fc2a8546e6","equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T09:00:00.000Z","endAt":"2030-01-15T12:00:00.000Z","purpose":"[api-test] Rescheduled presentation","createdAt":"2026-10-06T08:37:19.699Z","updatedAt":"2026-10-06T08:37:21.590Z"}
 ```
 
 ### 6. Missing required fields: PASS
@@ -257,7 +257,7 @@ The start/end rule is re-checked on update against the stored values (stored sta
 Expected: 400. Actual: 400.
 
 ```bash
-curl -i -X PATCH https://equipment-booking-api.medcard-api.workers.dev/api/bookings/9b5614a6-099b-4e8c-8f0f-babbf682535b \
+curl -i -X PATCH https://equipment-booking-api.medcard-api.workers.dev/api/bookings/dea83509-5673-46a2-b46f-b0fc2a8546e6 \
   -H 'Content-Type: application/json' \
   -d '{"endAt":"2030-01-15T08:00:00.000Z"}'
 ```
@@ -277,7 +277,7 @@ An empty PATCH is rejected instead of silently doing nothing.
 Expected: 400. Actual: 400.
 
 ```bash
-curl -i -X PATCH https://equipment-booking-api.medcard-api.workers.dev/api/bookings/9b5614a6-099b-4e8c-8f0f-babbf682535b \
+curl -i -X PATCH https://equipment-booking-api.medcard-api.workers.dev/api/bookings/dea83509-5673-46a2-b46f-b0fc2a8546e6 \
   -H 'Content-Type: application/json' \
   -d '{}'
 ```
@@ -403,7 +403,7 @@ HTTP/1.1 201 Created
 content-type: application/json
 access-control-allow-origin: *
 
-{"id":"7968d6c4-143a-4c62-8be4-7a66301c3cb6","equipmentId":"eq-2","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T09:00:00.000Z","endAt":"2030-01-15T11:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:26:36.306Z","updatedAt":"2026-10-06T08:26:36.306Z"}
+{"id":"8c6db97b-0b43-4903-b402-43547681c47f","equipmentId":"eq-2","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T09:00:00.000Z","endAt":"2030-01-15T11:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:37:26.334Z","updatedAt":"2026-10-06T08:37:26.334Z"}
 ```
 
 ### 19. Back-to-back booking: PASS
@@ -423,7 +423,7 @@ HTTP/1.1 201 Created
 content-type: application/json
 access-control-allow-origin: *
 
-{"id":"fa55d278-974c-4a72-b2b2-286ac2ebd8a8","equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T12:00:00.000Z","endAt":"2030-01-15T13:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:26:37.341Z","updatedAt":"2026-10-06T08:26:37.341Z"}
+{"id":"2230fd4a-e3a9-46e7-ab34-ecc2cab9ed8e","equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T12:00:00.000Z","endAt":"2030-01-15T13:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:37:26.856Z","updatedAt":"2026-10-06T08:37:26.856Z"}
 ```
 
 ### 20. Overlapping booking (update the time): PASS
@@ -433,7 +433,7 @@ Overlap is also prevented on update: moving the 12:00 booking back to 11:30 runs
 Expected: 409. Actual: 409.
 
 ```bash
-curl -i -X PATCH https://equipment-booking-api.medcard-api.workers.dev/api/bookings/fa55d278-974c-4a72-b2b2-286ac2ebd8a8 \
+curl -i -X PATCH https://equipment-booking-api.medcard-api.workers.dev/api/bookings/2230fd4a-e3a9-46e7-ab34-ecc2cab9ed8e \
   -H 'Content-Type: application/json' \
   -d '{"startAt":"2030-01-15T11:30:00.000Z"}'
 ```
@@ -453,7 +453,7 @@ Moving the eq-2 booking (09:00-11:00) onto eq-1 would collide with the eq-1 book
 Expected: 409. Actual: 409.
 
 ```bash
-curl -i -X PATCH https://equipment-booking-api.medcard-api.workers.dev/api/bookings/7968d6c4-143a-4c62-8be4-7a66301c3cb6 \
+curl -i -X PATCH https://equipment-booking-api.medcard-api.workers.dev/api/bookings/8c6db97b-0b43-4903-b402-43547681c47f \
   -H 'Content-Type: application/json' \
   -d '{"equipmentId":"eq-1"}'
 ```
@@ -473,7 +473,7 @@ equipmentId is validated on update as well.
 Expected: 404. Actual: 404.
 
 ```bash
-curl -i -X PATCH https://equipment-booking-api.medcard-api.workers.dev/api/bookings/7968d6c4-143a-4c62-8be4-7a66301c3cb6 \
+curl -i -X PATCH https://equipment-booking-api.medcard-api.workers.dev/api/bookings/8c6db97b-0b43-4903-b402-43547681c47f \
   -H 'Content-Type: application/json' \
   -d '{"equipmentId":"eq-999"}'
 ```
@@ -507,7 +507,7 @@ fetch('https://equipment-booking-api.medcard-api.workers.dev/api/bookings', {
 Bookings stored for the 40 contested slots (GET /bookings afterwards): 40
 
 Example of the one winner in a round:
-HTTP 201  {"id":"60a6c93a-addf-431e-8052-26beb4bf5169","equipmentId":"eq-3","borrowerName":"Somchai Jaidee","startAt":"2030-02-01T14:00:00.000Z","endAt":"2030-02-01T15:00:00.000Z","purpose":"[api-test] Race round","createdAt":"2026-10-06T08:26:39.045Z","updatedAt":"2026-10-06T08:26:39.045Z"}
+HTTP 201  {"id":"d0d3a09b-faa5-42ec-9bb2-4a68a3c6600f","equipmentId":"eq-3","borrowerName":"Somchai Jaidee","startAt":"2030-02-01T14:00:00.000Z","endAt":"2030-02-01T15:00:00.000Z","purpose":"[api-test] Race round","createdAt":"2026-10-06T08:37:27.949Z","updatedAt":"2026-10-06T08:37:27.949Z"}
 
 Example of a loser in the same round:
 HTTP 409  {"error":"Equipment 'eq-3' is already booked from 2030-02-01T14:00:00.000Z to 2030-02-01T15:00:00.000Z"}
@@ -530,7 +530,7 @@ HTTP/1.1 201 Created
 content-type: application/json
 access-control-allow-origin: *
 
-{"id":"4907bd96-4bad-4274-ad2a-67845f8d32d5","equipmentId":"eq-2","borrowerName":"Robert'); DROP TABLE bookings;--","startAt":"2030-01-15T15:00:00.000Z","endAt":"2030-01-15T16:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:26:57.849Z","updatedAt":"2026-10-06T08:26:57.849Z"}
+{"id":"95232ccd-9a84-4f38-bf9c-6223554049bc","equipmentId":"eq-2","borrowerName":"Robert'); DROP TABLE bookings;--","startAt":"2030-01-15T15:00:00.000Z","endAt":"2030-01-15T16:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:38:05.151Z","updatedAt":"2026-10-06T08:38:05.151Z"}
 ```
 
 ### 25. SQL injection attempt in the URL: PASS
@@ -558,7 +558,7 @@ The bookings table still exists and holds the injected text as an ordinary name.
 Expected: 200. Actual: 200.
 
 ```bash
-curl -i https://equipment-booking-api.medcard-api.workers.dev/api/bookings/4907bd96-4bad-4274-ad2a-67845f8d32d5
+curl -i https://equipment-booking-api.medcard-api.workers.dev/api/bookings/95232ccd-9a84-4f38-bf9c-6223554049bc
 ```
 
 ```http
@@ -566,7 +566,7 @@ HTTP/1.1 200 OK
 content-type: application/json
 access-control-allow-origin: *
 
-{"id":"4907bd96-4bad-4274-ad2a-67845f8d32d5","equipmentId":"eq-2","borrowerName":"Robert'); DROP TABLE bookings;--","startAt":"2030-01-15T15:00:00.000Z","endAt":"2030-01-15T16:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:26:57.849Z","updatedAt":"2026-10-06T08:26:57.849Z"}
+{"id":"95232ccd-9a84-4f38-bf9c-6223554049bc","equipmentId":"eq-2","borrowerName":"Robert'); DROP TABLE bookings;--","startAt":"2030-01-15T15:00:00.000Z","endAt":"2030-01-15T16:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:38:05.151Z","updatedAt":"2026-10-06T08:38:05.151Z"}
 ```
 
 ### 27. Time zone offset is normalised to UTC: PASS
@@ -586,7 +586,7 @@ HTTP/1.1 201 Created
 content-type: application/json
 access-control-allow-origin: *
 
-{"id":"4d149cd7-4eea-43ff-b752-a6b1a6b48550","equipmentId":"eq-3","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T09:00:00.000Z","endAt":"2030-01-15T11:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:26:58.613Z","updatedAt":"2026-10-06T08:26:58.613Z"}
+{"id":"6e8480bb-51de-48f2-86fa-816fffe9694e","equipmentId":"eq-3","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T09:00:00.000Z","endAt":"2030-01-15T11:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:38:07.862Z","updatedAt":"2026-10-06T08:38:07.862Z"}
 ```
 
 ### 28. CORS preflight: PASS
@@ -638,7 +638,7 @@ DELETE returns 204 with an empty body.
 Expected: 204. Actual: 204.
 
 ```bash
-curl -i -X DELETE https://equipment-booking-api.medcard-api.workers.dev/api/bookings/9b5614a6-099b-4e8c-8f0f-babbf682535b
+curl -i -X DELETE https://equipment-booking-api.medcard-api.workers.dev/api/bookings/dea83509-5673-46a2-b46f-b0fc2a8546e6
 ```
 
 ```http
@@ -655,7 +655,7 @@ The booking really was removed.
 Expected: 404. Actual: 404.
 
 ```bash
-curl -i https://equipment-booking-api.medcard-api.workers.dev/api/bookings/9b5614a6-099b-4e8c-8f0f-babbf682535b
+curl -i https://equipment-booking-api.medcard-api.workers.dev/api/bookings/dea83509-5673-46a2-b46f-b0fc2a8546e6
 ```
 
 ```http
@@ -673,7 +673,7 @@ Repeating a DELETE changes nothing further; the booking no longer exists, so the
 Expected: 404. Actual: 404.
 
 ```bash
-curl -i -X DELETE https://equipment-booking-api.medcard-api.workers.dev/api/bookings/9b5614a6-099b-4e8c-8f0f-babbf682535b
+curl -i -X DELETE https://equipment-booking-api.medcard-api.workers.dev/api/bookings/dea83509-5673-46a2-b46f-b0fc2a8546e6
 ```
 
 ```http

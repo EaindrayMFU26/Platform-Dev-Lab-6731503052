@@ -102,6 +102,25 @@ const app = new Hono<{ Bindings: Bindings }>()
 // credentials.
 app.use('*', cors({ origin: '*', allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'], maxAge: 600 }))
 
+// The Base API URL is the link people open first, so it answers with a short index
+// instead of "route not found".
+const index = (c: AppContext) =>
+  c.json({
+    name: 'Campus Equipment Booking API',
+    baseUrl: new URL('/api', c.req.url).href,
+    endpoints: [
+      'GET /api/equipment',
+      'GET /api/bookings',
+      'GET /api/bookings/:id',
+      'POST /api/bookings',
+      'PATCH /api/bookings/:id',
+      'DELETE /api/bookings/:id',
+    ],
+  })
+app.get('/', index)
+app.get('/api', index)
+app.get('/api/', index)
+
 app.get('/api/equipment', async (c) => {
   const { results } = await c.env.DB.prepare(SQL.listEquipment).all<Equipment>()
   return c.json(results)

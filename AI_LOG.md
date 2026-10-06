@@ -122,6 +122,14 @@ Checked by the AI on this machine (Windows 11, Node.js 24.19, wrangler 4.147, Ho
   the evidence files in the repository. One request a few seconds after the deployment returned a
   Cloudflare platform error ("error code: 1104", HTTP 500, not produced by the API code); it did
   not happen again in the requests that followed.
+- An independent check by separate AI agents started from the same tool (15:28 to 15:34): about
+  200 further requests against the deployed API, a code review, and a fact-check of the documents
+  and of the submission. It found no contract or business-rule violation and confirmed that all
+  required files are on GitHub. It did find one bug, a 500 for a text field that starts with a NUL
+  character, which was fixed and redeployed at 15:35. It also found that opening the base URL
+  `/api` showed "Route not found" (the student saw the same in the browser), which now returns a
+  short index, and three small errors in the documents, which were corrected. Two limits it found
+  are documented in the README rather than changed.
 
 Not verified by anyone:
 

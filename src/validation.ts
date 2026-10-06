@@ -67,6 +67,10 @@ function readFields(body: unknown, required: boolean): { fields: Partial<Booking
       else errors.push(`${field.name} must be an ISO 8601 date-time with a time zone, e.g. 2026-10-20T09:00:00.000Z`)
     } else if (typeof raw !== 'string' || raw.trim() === '') {
       errors.push(`${field.name} must be a non-empty string`)
+    } else if (raw.includes('\u0000')) {
+      // SQLite treats a NUL character as the end of a text value, so the database would
+      // see a different (possibly empty) string than the one that was sent.
+      errors.push(`${field.name} must not contain NUL characters`)
     } else if (raw.trim().length > field.maxLength) {
       errors.push(`${field.name} must be at most ${field.maxLength} characters`)
     } else {

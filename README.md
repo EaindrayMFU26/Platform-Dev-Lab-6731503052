@@ -57,6 +57,7 @@ Quick check: open <http://localhost:8787/api/equipment> in a browser.
 | `DELETE` | `/api/bookings/:id` | 204 | 404 |
 
 Every error is JSON: `{ "error": "message" }`. Details are in [API_CONTRACT.md](API_CONTRACT.md).
+Opening the base URL itself (`/api`) returns a short index with the API's name and these routes.
 
 ## Try it with curl
 
@@ -109,7 +110,7 @@ $body | curl.exe -i -X POST http://localhost:8787/api/bookings -H "Content-Type:
 
 ## Tests and evidence
 
-There are two sets of evidence, both produced with curl. The two files in the repository come from
+There are two sets of evidence, produced with curl. The two files in the repository come from
 runs against the **deployed** API, `https://equipment-booking-api.medcard-api.workers.dev/api`.
 The same two runs pass against the local server, `http://localhost:8787/api`.
 
@@ -138,7 +139,8 @@ npm test       # terminal 2
 ```
 
 `npm test` runs [tests/run-tests.mjs](tests/run-tests.mjs). It starts a real `curl` process for
-each request, compares the status code and body with what the contract promises, and writes every
+each request (the one exception is case 23, the race-condition test, which sends its simultaneous
+requests with Node.js `fetch`), compares the status code and body with what the contract promises, and writes every
 command and response to [TEST_EVIDENCE.md](TEST_EVIDENCE.md). It works from PowerShell and from
 Git Bash. To test another URL: `npm test -- https://example.com/api`.
 
@@ -243,7 +245,7 @@ src/index.ts          routes, SQL statements, CORS, error handling
 src/validation.ts     validation of booking payloads (no database, no HTTP)
 migrations/           D1 schema and seed data
 tests/curl-guide.sh   the instructor's nine curl commands, writes CURL_GUIDE_EVIDENCE.md
-tests/run-tests.mjs   32 curl-based API tests, writes TEST_EVIDENCE.md
+tests/run-tests.mjs   32 API tests (curl, plus fetch for the race case), writes TEST_EVIDENCE.md
 tools/browser-check.html   one-page CORS check for a real browser
 wrangler.jsonc        Worker and D1 configuration
 ```
@@ -256,6 +258,11 @@ wrangler.jsonc        Worker and D1 configuration
   equipment.
 - The deployed API is public and has no authentication, like the local one. Anyone with the URL
   can create, change or delete bookings.
+- On Cloudflare, a URL that contains an encoded NUL byte (`%00`) is rejected by Cloudflare itself
+  with an HTML 400 page before the request reaches the API. That one response is not JSON and
+  cannot be changed from the API's code.
+- Times are accepted with at most three decimals of a second. A value with more, such as
+  `10:00:00.0001Z`, is rejected with 400.
 
 ## Deployment
 
