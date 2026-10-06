@@ -5,8 +5,12 @@ The same equipment cannot be booked for overlapping times.
 
 Midterm practical lab test, 1305308 Platform Development. Student ID 6731503052.
 
-- **Stack:** TypeScript, Hono, Cloudflare Workers runtime (`wrangler dev`), D1 / SQLite (local)
-- **Base API URL:** `http://localhost:8787/api`
+- **Stack:** TypeScript, Hono, Cloudflare Workers, Cloudflare D1 (SQLite)
+- **Live API (Cloudflare):** <https://equipment-booking-api.medcard-api.workers.dev/api>, for
+  example [/api/equipment](https://equipment-booking-api.medcard-api.workers.dev/api/equipment)
+- **Base API URL used for testing:** `https://equipment-booking-api.medcard-api.workers.dev/api`
+  (deployed) and `http://localhost:8787/api` (local)
+- **Source code:** <https://github.com/EaindrayMFU26/Platform-Dev-Lab-6731503052>
 
 | Document | Contents |
 |---|---|
@@ -19,7 +23,8 @@ Midterm practical lab test, 1305308 Platform Development. Student ID 6731503052.
 
 ## Run it
 
-Needs Node.js 22 or newer.
+The deployed API needs no setup: use the live URL above. To run it on your own machine you need
+Node.js 22 or newer.
 
 ```bash
 npm install
@@ -34,8 +39,11 @@ Quick check: open <http://localhost:8787/api/equipment> in a browser.
 | `npm run dev` | Start the API on port 8787 |
 | `npm run db:migrate` | Apply the migrations to the local database |
 | `npm run db:reset` | Delete all bookings (equipment stays) |
-| `npm test` | Run the 32 API test cases and rewrite `TEST_EVIDENCE.md` (the API must be running) |
+| `npm test` | Run the 32 API test cases against the local server and rewrite `TEST_EVIDENCE.md` |
+| `npm test -- <base url>` | The same 32 cases against another server, for example the deployed one |
 | `npm run typecheck` | Generate the Worker types and type-check the code |
+| `npm run db:migrate:remote` | Apply the migrations to the deployed D1 database |
+| `npm run deploy` | Deploy the Worker to Cloudflare |
 
 ## Endpoints
 
@@ -52,7 +60,8 @@ Every error is JSON: `{ "error": "message" }`. Details are in [API_CONTRACT.md](
 
 ## Try it with curl
 
-These commands are for a bash-style shell (Git Bash on Windows, or macOS / Linux).
+These commands are for a bash-style shell (Git Bash on Windows, or macOS / Linux). They work the
+same against the deployed API: set `BASE_URL` to the live URL instead.
 
 ```bash
 BASE_URL=http://localhost:8787/api
@@ -100,21 +109,30 @@ $body | curl.exe -i -X POST http://localhost:8787/api/bookings -H "Content-Type:
 
 ## Tests and evidence
 
-There are two sets of evidence, both produced with curl against `http://localhost:8787/api`.
+There are two sets of evidence, both produced with curl. The two files in the repository come from
+runs against the **deployed** API, `https://equipment-booking-api.medcard-api.workers.dev/api`.
+The same two runs pass against the local server, `http://localhost:8787/api`.
 
 **The instructor's cURL guide.** [CURL_GUIDE_EVIDENCE.md](CURL_GUIDE_EVIDENCE.md) holds the nine
 commands of the guide, run exactly as written: create, read, update, delete, invalid input, not
-found and conflict. All nine return the expected status. To repeat it, start from no bookings and
-run this in Git Bash:
+found and conflict. All nine return the expected status. To repeat it, run this in Git Bash while
+`eq-1` has no booking on 2026-10-20:
 
 ```bash
-npm run db:reset
+# deployed API
+bash tests/curl-guide.sh https://equipment-booking-api.medcard-api.workers.dev/api > CURL_GUIDE_EVIDENCE.md
+
+# local server (npm run db:reset first gives a clean start)
 bash tests/curl-guide.sh > CURL_GUIDE_EVIDENCE.md
 ```
 
 **The project's own test suite** goes further, with 32 cases:
 
 ```bash
+# deployed API
+npm test -- https://equipment-booking-api.medcard-api.workers.dev/api
+
+# local server
 npm run dev    # terminal 1
 npm test       # terminal 2
 ```
@@ -143,8 +161,10 @@ The brief requires CORS only when a browser-based client is used. This project u
 check page in [tools/browser-check.html](tools/browser-check.html), and is meant to work with the
 instructor's frontend tester, so CORS is enabled.
 
-1. Start the API with `npm run dev`.
-2. In the tester, set the Base API URL to `http://localhost:8787/api` (no slash at the end).
+1. Use the deployed API, or start a local one with `npm run dev`.
+2. In the tester, set the Base API URL to
+   `https://equipment-booking-api.medcard-api.workers.dev/api` or `http://localhost:8787/api`
+   (no slash at the end).
 
 Nothing else is needed. A page on another origin may call this API because every response,
 including errors, carries `Access-Control-Allow-Origin: *`, and the browser's preflight `OPTIONS`
@@ -234,5 +254,20 @@ wrangler.jsonc        Worker and D1 configuration
   [SCHEMA.md](SCHEMA.md#known-limit).
 - `GET /bookings` returns everything. With many bookings it would need pagination and a filter by
   equipment.
-- The project runs locally. Deploying needs a real D1 database id in
-  [wrangler.jsonc](wrangler.jsonc) and `wrangler d1 migrations apply equipment-booking-db --remote`.
+- The deployed API is public and has no authentication, like the local one. Anyone with the URL
+  can create, change or delete bookings.
+
+## Deployment
+
+The API is deployed as the Cloudflare Worker `equipment-booking-api` with the D1 database
+`equipment-booking-db`. These are the commands that were used:
+
+```bash
+npx wrangler login
+npx wrangler d1 create equipment-booking-db    # the printed id goes into wrangler.jsonc
+npm run db:migrate:remote                      # tables and seed data in the deployed database
+npm run deploy
+```
+
+Local development is separate: `npm run dev` uses its own database in `.wrangler/` and never
+touches the deployed one.

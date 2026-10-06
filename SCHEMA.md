@@ -144,7 +144,8 @@ simultaneous requests for the same free slot.
 | Check with `SELECT`, then a separate `INSERT` (temporary experiment, not in the repository) | 4 of 40 | 17 bookings stored for one slot |
 | Single guarded statement (this repository) | 0 of 40 | 1 booking |
 
-Test case 23 in [TEST_EVIDENCE.md](TEST_EVIDENCE.md) repeats the second row on every run.
+Test case 23 in [TEST_EVIDENCE.md](TEST_EVIDENCE.md) repeats the second row on every run. Against
+the deployed API and its real D1 database the result is the same: 40 rounds, 40 bookings.
 
 ## Database constraints, tested directly
 
@@ -178,8 +179,9 @@ to keep the schema simple, since the API is the only writer.
 ## Commands
 
 ```bash
-npm run db:migrate    # create the tables and seed the equipment (local database)
-npm run db:reset      # delete all bookings, keep the equipment
+npm run db:migrate          # create the tables and seed the equipment (local database)
+npm run db:migrate:remote   # the same for the deployed D1 database
+npm run db:reset            # delete all bookings in the local database, keep the equipment
 
 # look at the data
 npx wrangler d1 execute equipment-booking-db --local --command "SELECT * FROM bookings ORDER BY start_at"

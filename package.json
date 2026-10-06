@@ -8,6 +8,8 @@
     "dev": "wrangler dev",
     "db:migrate": "wrangler d1 migrations apply equipment-booking-db --local",
     "db:reset": "wrangler d1 execute equipment-booking-db --local --command \"DELETE FROM bookings\"",
+    "db:migrate:remote": "wrangler d1 migrations apply equipment-booking-db --remote",
+    "deploy": "wrangler deploy",
     "typecheck": "wrangler types && tsc --noEmit",
     "test": "node tests/run-tests.mjs"
   },

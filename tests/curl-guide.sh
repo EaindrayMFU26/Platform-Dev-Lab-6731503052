@@ -9,6 +9,11 @@
 #   bash tests/curl-guide.sh https://example.com/api > CURL_GUIDE_EVIDENCE.md
 BASE_URL="${1:-http://localhost:8787/api}"
 BOOKING_ID=""
+case "$BASE_URL" in
+  http://localhost*|http://127.0.0.1*) server='`npm run dev` (wrangler dev with the local D1 / SQLite database)' ;;
+  *) server='the deployed Cloudflare Worker with its remote D1 database' ;;
+esac
+before=$(curl -s "$BASE_URL/bookings")
 pass=0
 total=0
 rows=""
@@ -116,11 +121,11 @@ written in the guide.
 - **Result:** ${pass} of ${total} steps returned the expected status code
 - **Run at:** $(date -u +%Y-%m-%dT%H:%M:%SZ) (local time: $(date '+%Y-%m-%d %H:%M:%S %z'))
 - **Shell and client:** Git Bash, $(curl --version | head -n 1 | cut -d' ' -f1-3)
-- **Server under test:** \`npm run dev\` (wrangler dev with the local D1 / SQLite database), started with no bookings stored
+- **Server under test:** ${server}
 - **\`BOOKING_ID\`:** \`${BOOKING_ID}\`, copied from the response of step 3
 
 The commands print curl's progress meter to the terminal as well; it is left out here. Nothing else
-was changed. After step 9 the list of bookings is \`${remaining}\`.
+was changed. The list of bookings was \`${before}\` before step 1 and \`${remaining}\` after step 9.
 
 | Step | Case | Expected | Actual | Result |
 |--:|---|---:|---:|---|

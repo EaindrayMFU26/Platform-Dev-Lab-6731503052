@@ -1,0 +1,4 @@
+# Shell scripts must keep LF line endings, also when checked out on Windows,
+# otherwise bash cannot run them.
+* text=auto
+*.sh text eol=lf

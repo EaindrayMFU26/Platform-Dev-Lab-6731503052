@@ -4,6 +4,7 @@ This contract follows the Common API Contract in [exam_brief_en.md](exam_brief_e
 brief leaves something open, the decision is listed under [Assumptions](#assumptions), each with
 the test case that verifies it.
 
+- **Base URL (deployed):** `https://equipment-booking-api.medcard-api.workers.dev/api`
 - **Base URL (local):** `http://localhost:8787/api`
 - **Format:** every request and response body is JSON (UTF-8)
 - **Times:** ISO 8601 date-times, always returned in UTC as `YYYY-MM-DDTHH:mm:ss.sssZ`

@@ -22,6 +22,7 @@ Times are local time on 6 October 2026. The first source file was created at 14:
 | 5 | **Execution Value** and **Delivery Quality** (tested with curl, evidence recorded) | There was evidence from the project's own tests, but none for the instructor's guide, which is what a marker is most likely to run. | Ran the nine guide commands exactly as written and saved the output (15:04). Added [tests/curl-guide.sh](tests/curl-guide.sh) so the run can be repeated. | [CURL_GUIDE_EVIDENCE.md](CURL_GUIDE_EVIDENCE.md): 9 of 9 expected status codes. |
 | 6 | **Delivery Quality** (CORS only if a browser-based client is used; usable by a browser client) | CORS was enabled, but the README did not say why. CORS headers were also only sent under `/api/*`, so a browser client with a wrong Base URL would have shown a CORS error instead of the real cause, a 404. | The README now states that CORS is included because a browser-based client is used. CORS is applied to every route (14:51). | `curl -i -H "Origin: http://localhost:5173" http://localhost:8787/bookings` returns a JSON 404 with `Access-Control-Allow-Origin: *`. [tools/browser-check.html](tools/browser-check.html) passes 7 of 7 in Chrome and Edge. |
 | 7 | **Purpose** (required deliverables) and **You Own It** (truthful AI log) | `QUALITY_GATE_REVIEW.md` did not exist, and `AI_LOG.md` did not yet record the third prompt or this review. | Created this file and updated the log (15:11 to 15:13). | This file. [AI_LOG.md](AI_LOG.md), sections 2 and 6. |
+| 8 | **Purpose** (submission instructions) and **Execution Value** | The updated submission requirements ask for a link to the source code and a link to the API on Cloudflare. Nothing was committed, and the API had only ever run locally. | Committed and pushed to GitHub (15:18). Created the D1 database, applied the migrations and deployed the Worker (15:25). Regenerated both evidence files against the deployed API (15:27). | Source: <https://github.com/EaindrayMFU26/Platform-Dev-Lab-6731503052>. API: <https://equipment-booking-api.medcard-api.workers.dev/api>. [CURL_GUIDE_EVIDENCE.md](CURL_GUIDE_EVIDENCE.md): 9 of 9. [TEST_EVIDENCE.md](TEST_EVIDENCE.md): 32 of 32, both against the deployed URL. |
 
 ## Checks that found nothing to fix
 
@@ -45,7 +46,7 @@ These were run because of the Quality Gate. They changed nothing, and are record
 |---|---|---|
 | 1. Purpose | API solves the booking problem | Verified: guide 9 of 9, suite 32 of 32 |
 | | Routes, bodies, responses and status codes match the contract | Verified: guide run as written |
-| | Required deliverables and submission instructions | Files are complete. **Open:** see "Open items" |
+| | Required deliverables and submission instructions | Files are complete, pushed to GitHub and the API is deployed (improvement 8). **Open:** see "Open items" |
 | | No unrelated features | Verified (table above) |
 | 2. Reliability | Data saved and retrieved consistently | Verified: restart check |
 | | Create and update cannot create an overlap | Verified: cases 17, 20, 21, 23 and guide step 7 |
@@ -79,19 +80,22 @@ These were run because of the Quality Gate. They changed nothing, and are record
 
 ## Open items
 
-1. **No snapshot of a first version at minute 30.** The repository's only commit (13:48) contains
-   the brief and the rubric. The first source file was written at 14:28, and no commit or
-   screenshot was made before the Quality Gate was applied. A snapshot cannot be created
-   afterwards. What exists instead is the record of the first test run in improvement 1.
-2. **Nothing is committed or submitted yet.** All project files are untracked.
-3. **The student's own verification is not done.** Section 7 of AI_LOG.md and every *Student* row
+1. **No snapshot of a first version at minute 30.** The first commit (13:48) contains only the
+   brief and the rubric. The first source file was written at 14:28, and no commit or screenshot
+   was made before the Quality Gate was applied. A snapshot cannot be created afterwards. The
+   first commit of the project was made at 15:18, after this review. What exists instead is the
+   record of the first test run in improvement 1.
+2. **The student's own verification is not done.** Section 7 of AI_LOG.md and every *Student* row
    above are still open.
-4. **Not tested:** the instructor's frontend tester and starter repository, which were not
+3. **Not tested:** the instructor's frontend tester and starter repository, which were not
    available. CORS was tested with the project's own page instead.
+
+Closed since the first version of this review: the project is committed, pushed and deployed
+(improvement 8).
 
 ## Submission decision
 
 The decision is the student's. On the technical side there is no known defect, and every check
-that a tool can run has passed. Under the Quality Gate's own rule ("if you cannot explain a key
-part of your solution, stop and resolve it before submitting"), the decision should be READY only
-once open items 2 and 3 are closed.
+that a tool can run has passed, locally and against the deployed API. Under the Quality Gate's
+own rule ("if you cannot explain a key part of your solution, stop and resolve it before
+submitting"), the decision should be READY only once open item 2 is closed.

@@ -523,6 +523,7 @@ async function main() {
   const passedCount = results.filter((result) => result.passed).length
   const failedCount = results.length - passedCount
   const curlVersion = (await runCurlVersion()) || 'curl'
+  const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//.test(`${BASE_URL}/`)
 
   const lines = [
     '# Test Evidence',
@@ -531,8 +532,8 @@ async function main() {
     `- **Result:** ${passedCount} passed, ${failedCount} failed (${results.length} cases)`,
     `- **Run at:** ${startedAt.toISOString()} (local time: ${startedAt.toString()})`,
     `- **HTTP client:** ${curlVersion}`,
-    `- **How it was run:** \`npm test\` (\`tests/run-tests.mjs\` starts one real \`curl\` process per request and records what it printed)`,
-    `- **Server under test:** \`npm run dev\` (wrangler dev with the local D1 / SQLite database)`,
+    `- **How it was run:** \`${isLocal ? 'npm test' : `npm test -- ${BASE_URL}`}\` (\`tests/run-tests.mjs\` starts one real \`curl\` process per request and records what it printed)`,
+    `- **Server under test:** ${isLocal ? '`npm run dev` (wrangler dev with the local D1 / SQLite database)' : 'the deployed Cloudflare Worker with its remote D1 database'}`,
     '',
     `Each curl command below is shown exactly as it was run, except that \`${QUIET.join(' ')}\` was added to every`,
     'command (no progress meter, 20 second limit). The commands are written for a bash-style shell such as Git Bash.',

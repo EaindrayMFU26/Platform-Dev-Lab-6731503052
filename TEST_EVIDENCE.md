@@ -1,11 +1,11 @@
 # Test Evidence
 
-- **Base API URL:** `http://localhost:8787/api`
+- **Base API URL:** `https://equipment-booking-api.medcard-api.workers.dev/api`
 - **Result:** 32 passed, 0 failed (32 cases)
-- **Run at:** 2026-10-06T08:13:00.399Z (local time: Tue Oct 06 2026 15:13:00 GMT+0700 (Indochina Time))
+- **Run at:** 2026-10-06T08:26:24.532Z (local time: Tue Oct 06 2026 15:26:24 GMT+0700 (Indochina Time))
 - **HTTP client:** curl 8.4.0 (x86_64-w64-mingw32) libcurl/8.4.0 Schannel zlib/1.3 brotli/1.1.0 zstd/1.5.5 libidn2/2.3.4 libpsl/0.21.2 (+libidn2/2.3.3) libssh2/1.11.0
-- **How it was run:** `npm test` (`tests/run-tests.mjs` starts one real `curl` process per request and records what it printed)
-- **Server under test:** `npm run dev` (wrangler dev with the local D1 / SQLite database)
+- **How it was run:** `npm test -- https://equipment-booking-api.medcard-api.workers.dev/api` (`tests/run-tests.mjs` starts one real `curl` process per request and records what it printed)
+- **Server under test:** the deployed Cloudflare Worker with its remote D1 database
 
 Each curl command below is shown exactly as it was run, except that `-s -S --max-time 20` was added to every
 command (no progress meter, 20 second limit). The commands are written for a bash-style shell such as Git Bash.
@@ -24,15 +24,15 @@ Test data: every booking is dated 2030 and marked `[api-test]` in `purpose`. 0 l
 | 1 | List equipment | `GET /equipment` | 200 | 200 | PASS |
 | 2 | Create a booking | `POST /bookings` | 201 | 201 | PASS |
 | 3 | List bookings | `GET /bookings` | 200 | 200 | PASS |
-| 4 | Get one booking | `GET /bookings/ffdf1334-c846-4b41-be92-82b6f7da68a3` | 200 | 200 | PASS |
-| 5 | Update a booking (partial) | `PATCH /bookings/ffdf1334-c846-4b41-be92-82b6f7da68a3` | 200 | 200 | PASS |
+| 4 | Get one booking | `GET /bookings/9b5614a6-099b-4e8c-8f0f-babbf682535b` | 200 | 200 | PASS |
+| 5 | Update a booking (partial) | `PATCH /bookings/9b5614a6-099b-4e8c-8f0f-babbf682535b` | 200 | 200 | PASS |
 | 6 | Missing required fields | `POST /bookings` | 400 | 400 | PASS |
 | 7 | Start time not before end time | `POST /bookings` | 400 | 400 | PASS |
 | 8 | Value that is not a date-time | `POST /bookings` | 400 | 400 | PASS |
 | 9 | Impossible calendar date (30 February) | `POST /bookings` | 400 | 400 | PASS |
 | 10 | Malformed JSON body | `POST /bookings` | 400 | 400 | PASS |
-| 11 | Update that makes the time range invalid | `PATCH /bookings/ffdf1334-c846-4b41-be92-82b6f7da68a3` | 400 | 400 | PASS |
-| 12 | Update with nothing to change | `PATCH /bookings/ffdf1334-c846-4b41-be92-82b6f7da68a3` | 400 | 400 | PASS |
+| 11 | Update that makes the time range invalid | `PATCH /bookings/9b5614a6-099b-4e8c-8f0f-babbf682535b` | 400 | 400 | PASS |
+| 12 | Update with nothing to change | `PATCH /bookings/9b5614a6-099b-4e8c-8f0f-babbf682535b` | 400 | 400 | PASS |
 | 13 | Unknown equipment | `POST /bookings` | 404 | 404 | PASS |
 | 14 | Unknown booking id | `GET /bookings/does-not-exist` | 404 | 404 | PASS |
 | 15 | Update an unknown booking | `PATCH /bookings/does-not-exist` | 404 | 404 | PASS |
@@ -40,19 +40,19 @@ Test data: every booking is dated 2030 and marked `[api-test]` in `purpose`. 0 l
 | 17 | Overlapping booking (create) | `POST /bookings` | 409 | 409 | PASS |
 | 18 | Same time, different equipment | `POST /bookings` | 201 | 201 | PASS |
 | 19 | Back-to-back booking | `POST /bookings` | 201 | 201 | PASS |
-| 20 | Overlapping booking (update the time) | `PATCH /bookings/06e0dcb8-e7ef-46f8-966a-4e49d7b448cb` | 409 | 409 | PASS |
-| 21 | Overlapping booking (update the equipment) | `PATCH /bookings/2502757f-1931-40cb-8ef5-217a957bd540` | 409 | 409 | PASS |
-| 22 | Update to unknown equipment | `PATCH /bookings/2502757f-1931-40cb-8ef5-217a957bd540` | 404 | 404 | PASS |
+| 20 | Overlapping booking (update the time) | `PATCH /bookings/fa55d278-974c-4a72-b2b2-286ac2ebd8a8` | 409 | 409 | PASS |
+| 21 | Overlapping booking (update the equipment) | `PATCH /bookings/7968d6c4-143a-4c62-8be4-7a66301c3cb6` | 409 | 409 | PASS |
+| 22 | Update to unknown equipment | `PATCH /bookings/7968d6c4-143a-4c62-8be4-7a66301c3cb6` | 404 | 404 | PASS |
 | 23 | Simultaneous requests for the same slot | `40 rounds x 20 simultaneous POST /bookings` | 40 x 201 (one per round), 760 x 409 | 40 x 201, 760 x 409 | PASS |
 | 24 | SQL injection attempt in a field | `POST /bookings` | 201 | 201 | PASS |
 | 25 | SQL injection attempt in the URL | `GET /bookings/x' OR '1'='1` | 404 | 404 | PASS |
-| 26 | Table intact after the injection attempts | `GET /bookings/cd45f3a9-55b4-41a8-846a-a7267cb08370` | 200 | 200 | PASS |
+| 26 | Table intact after the injection attempts | `GET /bookings/4907bd96-4bad-4274-ad2a-67845f8d32d5` | 200 | 200 | PASS |
 | 27 | Time zone offset is normalised to UTC | `POST /bookings` | 201 | 201 | PASS |
 | 28 | CORS preflight | `OPTIONS /bookings` | 204 | 204 | PASS |
 | 29 | CORS headers on an error response | `GET /bookings/does-not-exist` | 404 | 404 | PASS |
-| 30 | Delete a booking | `DELETE /bookings/ffdf1334-c846-4b41-be92-82b6f7da68a3` | 204 | 204 | PASS |
-| 31 | Deleted booking is gone | `GET /bookings/ffdf1334-c846-4b41-be92-82b6f7da68a3` | 404 | 404 | PASS |
-| 32 | Delete the same booking again | `DELETE /bookings/ffdf1334-c846-4b41-be92-82b6f7da68a3` | 404 | 404 | PASS |
+| 30 | Delete a booking | `DELETE /bookings/9b5614a6-099b-4e8c-8f0f-babbf682535b` | 204 | 204 | PASS |
+| 31 | Deleted booking is gone | `GET /bookings/9b5614a6-099b-4e8c-8f0f-babbf682535b` | 404 | 404 | PASS |
+| 32 | Delete the same booking again | `DELETE /bookings/9b5614a6-099b-4e8c-8f0f-babbf682535b` | 404 | 404 | PASS |
 
 ## Details
 
@@ -63,7 +63,7 @@ At least two equipment records exist and are returned as an array of { id, name,
 Expected: 200. Actual: 200.
 
 ```bash
-curl -i http://localhost:8787/api/equipment
+curl -i https://equipment-booking-api.medcard-api.workers.dev/api/equipment
 ```
 
 ```http
@@ -81,7 +81,7 @@ A valid payload is stored and returned with a server-generated id.
 Expected: 201. Actual: 201.
 
 ```bash
-curl -i -X POST http://localhost:8787/api/bookings \
+curl -i -X POST https://equipment-booking-api.medcard-api.workers.dev/api/bookings \
   -H 'Content-Type: application/json' \
   -d '{"equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T09:00:00.000Z","endAt":"2030-01-15T11:00:00.000Z","purpose":"[api-test] Class presentation"}'
 ```
@@ -91,7 +91,7 @@ HTTP/1.1 201 Created
 content-type: application/json
 access-control-allow-origin: *
 
-{"id":"ffdf1334-c846-4b41-be92-82b6f7da68a3","equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T09:00:00.000Z","endAt":"2030-01-15T11:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:13:00.918Z","updatedAt":"2026-10-06T08:13:00.918Z"}
+{"id":"9b5614a6-099b-4e8c-8f0f-babbf682535b","equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T09:00:00.000Z","endAt":"2030-01-15T11:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:26:25.840Z","updatedAt":"2026-10-06T08:26:25.840Z"}
 ```
 
 ### 3. List bookings: PASS
@@ -101,7 +101,7 @@ The new booking appears in the list.
 Expected: 200. Actual: 200.
 
 ```bash
-curl -i http://localhost:8787/api/bookings
+curl -i https://equipment-booking-api.medcard-api.workers.dev/api/bookings
 ```
 
 ```http
@@ -109,7 +109,7 @@ HTTP/1.1 200 OK
 content-type: application/json
 access-control-allow-origin: *
 
-[{"id":"ffdf1334-c846-4b41-be92-82b6f7da68a3","equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T09:00:00.000Z","endAt":"2030-01-15T11:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:13:00.918Z","updatedAt":"2026-10-06T08:13:00.918Z"}]
+[{"id":"9b5614a6-099b-4e8c-8f0f-babbf682535b","equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T09:00:00.000Z","endAt":"2030-01-15T11:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:26:25.840Z","updatedAt":"2026-10-06T08:26:25.840Z"}]
 ```
 
 ### 4. Get one booking: PASS
@@ -119,7 +119,7 @@ A booking can be fetched by id.
 Expected: 200. Actual: 200.
 
 ```bash
-curl -i http://localhost:8787/api/bookings/ffdf1334-c846-4b41-be92-82b6f7da68a3
+curl -i https://equipment-booking-api.medcard-api.workers.dev/api/bookings/9b5614a6-099b-4e8c-8f0f-babbf682535b
 ```
 
 ```http
@@ -127,7 +127,7 @@ HTTP/1.1 200 OK
 content-type: application/json
 access-control-allow-origin: *
 
-{"id":"ffdf1334-c846-4b41-be92-82b6f7da68a3","equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T09:00:00.000Z","endAt":"2030-01-15T11:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:13:00.918Z","updatedAt":"2026-10-06T08:13:00.918Z"}
+{"id":"9b5614a6-099b-4e8c-8f0f-babbf682535b","equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T09:00:00.000Z","endAt":"2030-01-15T11:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:26:25.840Z","updatedAt":"2026-10-06T08:26:25.840Z"}
 ```
 
 ### 5. Update a booking (partial): PASS
@@ -137,7 +137,7 @@ PATCH changes only the fields sent. Extending the end time overlaps the booking'
 Expected: 200. Actual: 200.
 
 ```bash
-curl -i -X PATCH http://localhost:8787/api/bookings/ffdf1334-c846-4b41-be92-82b6f7da68a3 \
+curl -i -X PATCH https://equipment-booking-api.medcard-api.workers.dev/api/bookings/9b5614a6-099b-4e8c-8f0f-babbf682535b \
   -H 'Content-Type: application/json' \
   -d '{"endAt":"2030-01-15T12:00:00.000Z","purpose":"[api-test] Rescheduled presentation"}'
 ```
@@ -147,7 +147,7 @@ HTTP/1.1 200 OK
 content-type: application/json
 access-control-allow-origin: *
 
-{"id":"ffdf1334-c846-4b41-be92-82b6f7da68a3","equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T09:00:00.000Z","endAt":"2030-01-15T12:00:00.000Z","purpose":"[api-test] Rescheduled presentation","createdAt":"2026-10-06T08:13:00.918Z","updatedAt":"2026-10-06T08:13:01.706Z"}
+{"id":"9b5614a6-099b-4e8c-8f0f-babbf682535b","equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T09:00:00.000Z","endAt":"2030-01-15T12:00:00.000Z","purpose":"[api-test] Rescheduled presentation","createdAt":"2026-10-06T08:26:25.840Z","updatedAt":"2026-10-06T08:26:27.886Z"}
 ```
 
 ### 6. Missing required fields: PASS
@@ -157,7 +157,7 @@ Missing data is a client error: 400, and the message names every missing field.
 Expected: 400. Actual: 400.
 
 ```bash
-curl -i -X POST http://localhost:8787/api/bookings \
+curl -i -X POST https://equipment-booking-api.medcard-api.workers.dev/api/bookings \
   -H 'Content-Type: application/json' \
   -d '{"equipmentId":"eq-1"}'
 ```
@@ -177,7 +177,7 @@ startAt must be before endAt.
 Expected: 400. Actual: 400.
 
 ```bash
-curl -i -X POST http://localhost:8787/api/bookings \
+curl -i -X POST https://equipment-booking-api.medcard-api.workers.dev/api/bookings \
   -H 'Content-Type: application/json' \
   -d '{"equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T15:00:00.000Z","endAt":"2030-01-15T14:00:00.000Z","purpose":"[api-test] Class presentation"}'
 ```
@@ -197,7 +197,7 @@ startAt and endAt must be ISO 8601 date-times with a time zone.
 Expected: 400. Actual: 400.
 
 ```bash
-curl -i -X POST http://localhost:8787/api/bookings \
+curl -i -X POST https://equipment-booking-api.medcard-api.workers.dev/api/bookings \
   -H 'Content-Type: application/json' \
   -d '{"equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"tomorrow 9am","endAt":"2030-01-15T11:00:00.000Z","purpose":"[api-test] Class presentation"}'
 ```
@@ -217,7 +217,7 @@ JavaScript would silently turn 30 February into 2 March. The API rejects it inst
 Expected: 400. Actual: 400.
 
 ```bash
-curl -i -X POST http://localhost:8787/api/bookings \
+curl -i -X POST https://equipment-booking-api.medcard-api.workers.dev/api/bookings \
   -H 'Content-Type: application/json' \
   -d '{"equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2030-02-30T09:00:00.000Z","endAt":"2030-03-05T09:00:00.000Z","purpose":"[api-test] Class presentation"}'
 ```
@@ -237,7 +237,7 @@ A body that cannot be parsed is a client error, not a server crash.
 Expected: 400. Actual: 400.
 
 ```bash
-curl -i -X POST http://localhost:8787/api/bookings \
+curl -i -X POST https://equipment-booking-api.medcard-api.workers.dev/api/bookings \
   -H 'Content-Type: application/json' \
   -d '{"equipmentId": "eq-1",'
 ```
@@ -257,7 +257,7 @@ The start/end rule is re-checked on update against the stored values (stored sta
 Expected: 400. Actual: 400.
 
 ```bash
-curl -i -X PATCH http://localhost:8787/api/bookings/ffdf1334-c846-4b41-be92-82b6f7da68a3 \
+curl -i -X PATCH https://equipment-booking-api.medcard-api.workers.dev/api/bookings/9b5614a6-099b-4e8c-8f0f-babbf682535b \
   -H 'Content-Type: application/json' \
   -d '{"endAt":"2030-01-15T08:00:00.000Z"}'
 ```
@@ -277,7 +277,7 @@ An empty PATCH is rejected instead of silently doing nothing.
 Expected: 400. Actual: 400.
 
 ```bash
-curl -i -X PATCH http://localhost:8787/api/bookings/ffdf1334-c846-4b41-be92-82b6f7da68a3 \
+curl -i -X PATCH https://equipment-booking-api.medcard-api.workers.dev/api/bookings/9b5614a6-099b-4e8c-8f0f-babbf682535b \
   -H 'Content-Type: application/json' \
   -d '{}'
 ```
@@ -297,7 +297,7 @@ equipmentId must refer to existing equipment. The payload is well formed but the
 Expected: 404. Actual: 404.
 
 ```bash
-curl -i -X POST http://localhost:8787/api/bookings \
+curl -i -X POST https://equipment-booking-api.medcard-api.workers.dev/api/bookings \
   -H 'Content-Type: application/json' \
   -d '{"equipmentId":"eq-999","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T09:00:00.000Z","endAt":"2030-01-15T11:00:00.000Z","purpose":"[api-test] Class presentation"}'
 ```
@@ -317,7 +317,7 @@ Reading a booking that does not exist is 404.
 Expected: 404. Actual: 404.
 
 ```bash
-curl -i http://localhost:8787/api/bookings/does-not-exist
+curl -i https://equipment-booking-api.medcard-api.workers.dev/api/bookings/does-not-exist
 ```
 
 ```http
@@ -335,7 +335,7 @@ Updating a booking that does not exist is 404.
 Expected: 404. Actual: 404.
 
 ```bash
-curl -i -X PATCH http://localhost:8787/api/bookings/does-not-exist \
+curl -i -X PATCH https://equipment-booking-api.medcard-api.workers.dev/api/bookings/does-not-exist \
   -H 'Content-Type: application/json' \
   -d '{"purpose":"[api-test] Nothing to update"}'
 ```
@@ -355,7 +355,7 @@ Even a wrong URL gets a JSON error, never an HTML or plain-text page.
 Expected: 404. Actual: 404.
 
 ```bash
-curl -i http://localhost:8787/api/rooms
+curl -i https://equipment-booking-api.medcard-api.workers.dev/api/rooms
 ```
 
 ```http
@@ -373,7 +373,7 @@ eq-1 is booked 09:00-12:00, so 10:00-13:00 on the same equipment conflicts: 409.
 Expected: 409. Actual: 409.
 
 ```bash
-curl -i -X POST http://localhost:8787/api/bookings \
+curl -i -X POST https://equipment-booking-api.medcard-api.workers.dev/api/bookings \
   -H 'Content-Type: application/json' \
   -d '{"equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T10:00:00.000Z","endAt":"2030-01-15T13:00:00.000Z","purpose":"[api-test] Class presentation"}'
 ```
@@ -393,7 +393,7 @@ The overlap rule is per equipment: eq-2 is free at a time when eq-1 is taken.
 Expected: 201. Actual: 201.
 
 ```bash
-curl -i -X POST http://localhost:8787/api/bookings \
+curl -i -X POST https://equipment-booking-api.medcard-api.workers.dev/api/bookings \
   -H 'Content-Type: application/json' \
   -d '{"equipmentId":"eq-2","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T09:00:00.000Z","endAt":"2030-01-15T11:00:00.000Z","purpose":"[api-test] Class presentation"}'
 ```
@@ -403,7 +403,7 @@ HTTP/1.1 201 Created
 content-type: application/json
 access-control-allow-origin: *
 
-{"id":"2502757f-1931-40cb-8ef5-217a957bd540","equipmentId":"eq-2","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T09:00:00.000Z","endAt":"2030-01-15T11:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:13:05.085Z","updatedAt":"2026-10-06T08:13:05.085Z"}
+{"id":"7968d6c4-143a-4c62-8be4-7a66301c3cb6","equipmentId":"eq-2","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T09:00:00.000Z","endAt":"2030-01-15T11:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:26:36.306Z","updatedAt":"2026-10-06T08:26:36.306Z"}
 ```
 
 ### 19. Back-to-back booking: PASS
@@ -413,7 +413,7 @@ A booking may start at the exact moment the previous one ends (12:00): the end t
 Expected: 201. Actual: 201.
 
 ```bash
-curl -i -X POST http://localhost:8787/api/bookings \
+curl -i -X POST https://equipment-booking-api.medcard-api.workers.dev/api/bookings \
   -H 'Content-Type: application/json' \
   -d '{"equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T12:00:00.000Z","endAt":"2030-01-15T13:00:00.000Z","purpose":"[api-test] Class presentation"}'
 ```
@@ -423,7 +423,7 @@ HTTP/1.1 201 Created
 content-type: application/json
 access-control-allow-origin: *
 
-{"id":"06e0dcb8-e7ef-46f8-966a-4e49d7b448cb","equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T12:00:00.000Z","endAt":"2030-01-15T13:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:13:05.342Z","updatedAt":"2026-10-06T08:13:05.342Z"}
+{"id":"fa55d278-974c-4a72-b2b2-286ac2ebd8a8","equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T12:00:00.000Z","endAt":"2030-01-15T13:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:26:37.341Z","updatedAt":"2026-10-06T08:26:37.341Z"}
 ```
 
 ### 20. Overlapping booking (update the time): PASS
@@ -433,7 +433,7 @@ Overlap is also prevented on update: moving the 12:00 booking back to 11:30 runs
 Expected: 409. Actual: 409.
 
 ```bash
-curl -i -X PATCH http://localhost:8787/api/bookings/06e0dcb8-e7ef-46f8-966a-4e49d7b448cb \
+curl -i -X PATCH https://equipment-booking-api.medcard-api.workers.dev/api/bookings/fa55d278-974c-4a72-b2b2-286ac2ebd8a8 \
   -H 'Content-Type: application/json' \
   -d '{"startAt":"2030-01-15T11:30:00.000Z"}'
 ```
@@ -453,7 +453,7 @@ Moving the eq-2 booking (09:00-11:00) onto eq-1 would collide with the eq-1 book
 Expected: 409. Actual: 409.
 
 ```bash
-curl -i -X PATCH http://localhost:8787/api/bookings/2502757f-1931-40cb-8ef5-217a957bd540 \
+curl -i -X PATCH https://equipment-booking-api.medcard-api.workers.dev/api/bookings/7968d6c4-143a-4c62-8be4-7a66301c3cb6 \
   -H 'Content-Type: application/json' \
   -d '{"equipmentId":"eq-1"}'
 ```
@@ -473,7 +473,7 @@ equipmentId is validated on update as well.
 Expected: 404. Actual: 404.
 
 ```bash
-curl -i -X PATCH http://localhost:8787/api/bookings/2502757f-1931-40cb-8ef5-217a957bd540 \
+curl -i -X PATCH https://equipment-booking-api.medcard-api.workers.dev/api/bookings/7968d6c4-143a-4c62-8be4-7a66301c3cb6 \
   -H 'Content-Type: application/json' \
   -d '{"equipmentId":"eq-999"}'
 ```
@@ -495,7 +495,7 @@ Expected: 40 x 201 (one per round), 760 x 409. Actual: 40 x 201, 760 x 409.
 ```js
 // Node.js, one process. Each round sends 20 of these at the same moment (Promise.all),
 // and every round uses the next day (2030-02-01, 2030-02-02, ...). 800 requests in total.
-fetch('http://localhost:8787/api/bookings', {
+fetch('https://equipment-booking-api.medcard-api.workers.dev/api/bookings', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: '{"equipmentId":"eq-3","borrowerName":"Somchai Jaidee","startAt":"2030-02-01T14:00:00.000Z","endAt":"2030-02-01T15:00:00.000Z","purpose":"[api-test] Race round"}',
@@ -507,7 +507,7 @@ fetch('http://localhost:8787/api/bookings', {
 Bookings stored for the 40 contested slots (GET /bookings afterwards): 40
 
 Example of the one winner in a round:
-HTTP 201  {"id":"ff445887-04ad-4b5e-8a6d-4c67a38b9672","equipmentId":"eq-3","borrowerName":"Somchai Jaidee","startAt":"2030-02-01T14:00:00.000Z","endAt":"2030-02-01T15:00:00.000Z","purpose":"[api-test] Race round","createdAt":"2026-10-06T08:13:06.319Z","updatedAt":"2026-10-06T08:13:06.319Z"}
+HTTP 201  {"id":"60a6c93a-addf-431e-8052-26beb4bf5169","equipmentId":"eq-3","borrowerName":"Somchai Jaidee","startAt":"2030-02-01T14:00:00.000Z","endAt":"2030-02-01T15:00:00.000Z","purpose":"[api-test] Race round","createdAt":"2026-10-06T08:26:39.045Z","updatedAt":"2026-10-06T08:26:39.045Z"}
 
 Example of a loser in the same round:
 HTTP 409  {"error":"Equipment 'eq-3' is already booked from 2030-02-01T14:00:00.000Z to 2030-02-01T15:00:00.000Z"}
@@ -520,7 +520,7 @@ Values are bound as parameters, so SQL inside a value is stored as plain text an
 Expected: 201. Actual: 201.
 
 ```bash
-curl -i -X POST http://localhost:8787/api/bookings \
+curl -i -X POST https://equipment-booking-api.medcard-api.workers.dev/api/bookings \
   -H 'Content-Type: application/json' \
   -d '{"equipmentId":"eq-2","borrowerName":"Robert'\''); DROP TABLE bookings;--","startAt":"2030-01-15T15:00:00.000Z","endAt":"2030-01-15T16:00:00.000Z","purpose":"[api-test] Class presentation"}'
 ```
@@ -530,7 +530,7 @@ HTTP/1.1 201 Created
 content-type: application/json
 access-control-allow-origin: *
 
-{"id":"cd45f3a9-55b4-41a8-846a-a7267cb08370","equipmentId":"eq-2","borrowerName":"Robert'); DROP TABLE bookings;--","startAt":"2030-01-15T15:00:00.000Z","endAt":"2030-01-15T16:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:13:15.373Z","updatedAt":"2026-10-06T08:13:15.373Z"}
+{"id":"4907bd96-4bad-4274-ad2a-67845f8d32d5","equipmentId":"eq-2","borrowerName":"Robert'); DROP TABLE bookings;--","startAt":"2030-01-15T15:00:00.000Z","endAt":"2030-01-15T16:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:26:57.849Z","updatedAt":"2026-10-06T08:26:57.849Z"}
 ```
 
 ### 25. SQL injection attempt in the URL: PASS
@@ -540,7 +540,7 @@ The id x' OR '1'='1 is compared as a value: it matches no booking instead of mat
 Expected: 404. Actual: 404.
 
 ```bash
-curl -i http://localhost:8787/api/bookings/x%27%20OR%20%271%27%3D%271
+curl -i https://equipment-booking-api.medcard-api.workers.dev/api/bookings/x%27%20OR%20%271%27%3D%271
 ```
 
 ```http
@@ -558,7 +558,7 @@ The bookings table still exists and holds the injected text as an ordinary name.
 Expected: 200. Actual: 200.
 
 ```bash
-curl -i http://localhost:8787/api/bookings/cd45f3a9-55b4-41a8-846a-a7267cb08370
+curl -i https://equipment-booking-api.medcard-api.workers.dev/api/bookings/4907bd96-4bad-4274-ad2a-67845f8d32d5
 ```
 
 ```http
@@ -566,7 +566,7 @@ HTTP/1.1 200 OK
 content-type: application/json
 access-control-allow-origin: *
 
-{"id":"cd45f3a9-55b4-41a8-846a-a7267cb08370","equipmentId":"eq-2","borrowerName":"Robert'); DROP TABLE bookings;--","startAt":"2030-01-15T15:00:00.000Z","endAt":"2030-01-15T16:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:13:15.373Z","updatedAt":"2026-10-06T08:13:15.373Z"}
+{"id":"4907bd96-4bad-4274-ad2a-67845f8d32d5","equipmentId":"eq-2","borrowerName":"Robert'); DROP TABLE bookings;--","startAt":"2030-01-15T15:00:00.000Z","endAt":"2030-01-15T16:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:26:57.849Z","updatedAt":"2026-10-06T08:26:57.849Z"}
 ```
 
 ### 27. Time zone offset is normalised to UTC: PASS
@@ -576,7 +576,7 @@ access-control-allow-origin: *
 Expected: 201. Actual: 201.
 
 ```bash
-curl -i -X POST http://localhost:8787/api/bookings \
+curl -i -X POST https://equipment-booking-api.medcard-api.workers.dev/api/bookings \
   -H 'Content-Type: application/json' \
   -d '{"equipmentId":"eq-3","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T16:00:00+07:00","endAt":"2030-01-15T18:00:00+07:00","purpose":"[api-test] Class presentation"}'
 ```
@@ -586,7 +586,7 @@ HTTP/1.1 201 Created
 content-type: application/json
 access-control-allow-origin: *
 
-{"id":"e2236e4a-4718-44cb-9b5f-719f12928eb7","equipmentId":"eq-3","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T09:00:00.000Z","endAt":"2030-01-15T11:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:13:16.159Z","updatedAt":"2026-10-06T08:13:16.159Z"}
+{"id":"4d149cd7-4eea-43ff-b752-a6b1a6b48550","equipmentId":"eq-3","borrowerName":"Somchai Jaidee","startAt":"2030-01-15T09:00:00.000Z","endAt":"2030-01-15T11:00:00.000Z","purpose":"[api-test] Class presentation","createdAt":"2026-10-06T08:26:58.613Z","updatedAt":"2026-10-06T08:26:58.613Z"}
 ```
 
 ### 28. CORS preflight: PASS
@@ -596,7 +596,7 @@ Before a JSON POST from another origin, a browser sends OPTIONS. The API must an
 Expected: 204. Actual: 204.
 
 ```bash
-curl -i -X OPTIONS http://localhost:8787/api/bookings \
+curl -i -X OPTIONS https://equipment-booking-api.medcard-api.workers.dev/api/bookings \
   -H 'Origin: http://localhost:5173' \
   -H 'Access-Control-Request-Method: POST' \
   -H 'Access-Control-Request-Headers: content-type'
@@ -619,7 +619,7 @@ Without CORS headers on errors, a browser client would see a generic network err
 Expected: 404. Actual: 404.
 
 ```bash
-curl -i http://localhost:8787/api/bookings/does-not-exist \
+curl -i https://equipment-booking-api.medcard-api.workers.dev/api/bookings/does-not-exist \
   -H 'Origin: http://localhost:5173'
 ```
 
@@ -638,7 +638,7 @@ DELETE returns 204 with an empty body.
 Expected: 204. Actual: 204.
 
 ```bash
-curl -i -X DELETE http://localhost:8787/api/bookings/ffdf1334-c846-4b41-be92-82b6f7da68a3
+curl -i -X DELETE https://equipment-booking-api.medcard-api.workers.dev/api/bookings/9b5614a6-099b-4e8c-8f0f-babbf682535b
 ```
 
 ```http
@@ -655,7 +655,7 @@ The booking really was removed.
 Expected: 404. Actual: 404.
 
 ```bash
-curl -i http://localhost:8787/api/bookings/ffdf1334-c846-4b41-be92-82b6f7da68a3
+curl -i https://equipment-booking-api.medcard-api.workers.dev/api/bookings/9b5614a6-099b-4e8c-8f0f-babbf682535b
 ```
 
 ```http
@@ -673,7 +673,7 @@ Repeating a DELETE changes nothing further; the booking no longer exists, so the
 Expected: 404. Actual: 404.
 
 ```bash
-curl -i -X DELETE http://localhost:8787/api/bookings/ffdf1334-c846-4b41-be92-82b6f7da68a3
+curl -i -X DELETE https://equipment-booking-api.medcard-api.workers.dev/api/bookings/9b5614a6-099b-4e8c-8f0f-babbf682535b
 ```
 
 ```http
