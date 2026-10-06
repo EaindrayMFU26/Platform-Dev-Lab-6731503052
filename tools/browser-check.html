@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Booking API browser check</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 15px/1.5 system-ui, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+  h1 { font-size: 1.4rem; }
+  input { font: inherit; padding: .35rem .5rem; width: min(100%, 26rem); }
+  button { font: inherit; padding: .35rem .9rem; cursor: pointer; }
+  ol { padding-left: 1.4rem; }
+  li { margin: .6rem 0; }
+  code, pre { font: 13px/1.45 ui-monospace, Consolas, monospace; }
+  pre { margin: .2rem 0 0; white-space: pre-wrap; word-break: break-word; opacity: .85; }
+  .pass { color: #1a7f37; font-weight: 600; }
+  .fail { color: #cf222e; font-weight: 600; }
+</style>
+</head>
+<body>
+<h1>Booking API: browser (CORS) check</h1>
+<p>
+  Calls the API from a web page, the way a frontend tester does. Unlike curl, a browser refuses to
+  show a response from another origin unless the API sends CORS headers, so this page proves that
+  CORS works for reads, for JSON writes (which trigger a preflight <code>OPTIONS</code> request) and
+  for error responses. It creates one booking on a random day after 2035 and deletes it again.
+</p>
+<p>
+  <label>Base API URL <input id="base" value="http://localhost:8787/api" spellcheck="false"></label>
+  <button id="run" type="button">Run checks</button>
+</p>
+<p id="summary"></p>
+<ol id="log"></ol>
+
+<script>
+const $ = (id) => document.getElementById(id)
+
+// Optional: browser-check.html?base=<url>&auto=1 fills in the URL and starts immediately.
+const query = new URLSearchParams(location.search)
+if (query.get('base')) $('base').value = query.get('base')
+
+async function call(base, method, path, body) {
+  const init = { method }
+  if (body !== undefined) {
+    init.headers = { 'Content-Type': 'application/json' } // not a "simple" header value: forces a preflight
+    init.body = JSON.stringify(body)
+  }
+  const response = await fetch(base + path, init)
+  const text = await response.text()
+  let json
+  try { json = text ? JSON.parse(text) : undefined } catch { json = undefined }
+  return { status: response.status, text, json }
+}
+
+function report(label, expected, result, error) {
+  const item = document.createElement('li')
+  const passed = !error && result.status === expected
+  const verdict = document.createElement('span')
+  verdict.className = passed ? 'pass' : 'fail'
+  verdict.textContent = passed ? 'PASS' : 'FAIL'
+  item.append(verdict, ` ${label}: expected ${expected}, got ${error ? 'no readable response' : result.status}`)
+  const detail = document.createElement('pre')
+  detail.textContent = error
+    ? `${error}\nThe request was blocked or the API is unreachable. If the API is running, this is a CORS ` +
+      'problem: open the browser console (F12) to see the exact reason.'
+    : result.text || '(empty body)'
+  item.append(detail)
+  $('log').append(item)
+  return passed
+}
+
+async function run() {
+  const base = $('base').value.trim().replace(/\/+$/, '')
+  $('log').replaceChildren()
+  $('summary').textContent = `Running against ${base} from origin ${location.origin} ...`
+  $('run').disabled = true
+
+  const day = new Date(Date.UTC(2035, 0, 1 + Math.floor(Math.random() * 3000))).toISOString().slice(0, 10)
+  const booking = {
+    equipmentId: 'eq-1',
+    borrowerName: 'Browser Check',
+    startAt: `${day}T09:00:00.000Z`,
+    endAt: `${day}T10:00:00.000Z`,
+    purpose: '[browser-check] CORS test',
+  }
+  let passed = 0
+  let total = 0
+  let id
+
+  const step = async (label, expected, method, path, body) => {
+    total++
+    try {
+      const result = await call(base, method, path, body)
+      if (report(label, expected, result)) passed++
+      return result
+    } catch (error) {
+      report(label, expected, null, error)
+      return null
+    }
+  }
+
+  const equipment = await step('GET /equipment', 200, 'GET', '/equipment')
+  if (Array.isArray(equipment?.json) && equipment.json[0]?.id) booking.equipmentId = equipment.json[0].id
+
+  const created = await step('POST /bookings (JSON body, preflighted)', 201, 'POST', '/bookings', booking)
+  id = created?.json?.id
+
+  if (id) {
+    await step('GET /bookings/:id', 200, 'GET', `/bookings/${id}`)
+    await step('PATCH /bookings/:id (preflighted)', 200, 'PATCH', `/bookings/${id}`, { purpose: '[browser-check] updated' })
+    await step('POST /bookings for the same slot (the error body must be readable)', 409, 'POST', '/bookings', booking)
+    await step('DELETE /bookings/:id (preflighted)', 204, 'DELETE', `/bookings/${id}`)
+    await step('GET /bookings/:id after delete', 404, 'GET', `/bookings/${id}`)
+  }
+
+  const ok = passed === total && Boolean(id)
+  $('summary').className = ok ? 'pass' : 'fail'
+  $('summary').textContent = `${ok ? 'All checks passed' : 'Some checks failed'}: ${passed} of ${total} ` +
+    `(API ${base}, page origin ${location.origin})`
+  document.body.dataset.result = ok ? 'pass' : 'fail'
+  $('run').disabled = false
+}
+
+$('run').addEventListener('click', run)
+if (query.get('auto')) run()
+</script>
+</body>
+</html>

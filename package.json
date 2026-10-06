@@ -1,0 +1,21 @@
+{
+  "name": "equipment-booking-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Campus Equipment Booking API - Hono + TypeScript on Cloudflare Workers with a local D1 (SQLite) database",
+  "scripts": {
+    "dev": "wrangler dev",
+    "db:migrate": "wrangler d1 migrations apply equipment-booking-db --local",
+    "db:reset": "wrangler d1 execute equipment-booking-db --local --command \"DELETE FROM bookings\"",
+    "typecheck": "wrangler types && tsc --noEmit",
+    "test": "node tests/run-tests.mjs"
+  },
+  "dependencies": {
+    "hono": "^4.13.13"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "wrangler": "^4.147.0"
+  }
+}
