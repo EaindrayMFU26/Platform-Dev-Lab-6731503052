@@ -1,8 +1,27 @@
 import { Hono, type Context } from 'hono'
+import { bodyLimit } from 'hono/body-limit'
 import { cors } from 'hono/cors'
 import { timeRangeError, validateBookingChanges, validateNewBooking, type BookingInput } from './validation'
+import {
+  QUEUES,
+  isQueueName,
+  readSettings,
+  routeSupportRequest,
+  validateSupportRequest,
+  type ModelRunner,
+  type RoutingDecision,
+} from './support-router'
 
-type Bindings = { DB: D1Database }
+// AI is the Workers AI binding (wrangler.jsonc). It is optional here so that a deployment
+// without it still answers support requests, through the fallback. The ROUTER_* variables
+// are the router's settings; see readSettings().
+type Bindings = {
+  DB: D1Database
+  AI?: Ai
+  ROUTER_MODEL?: string
+  ROUTER_TIMEOUT_MS?: string
+  ROUTER_MIN_CONFIDENCE?: string
+}
 type AppContext = Context<{ Bindings: Bindings }>
 
 type Equipment = { id: string; name: string; location: string }
@@ -27,6 +46,19 @@ const SQL = {
   listBookings: 'SELECT * FROM bookings ORDER BY start_at, id',
   findBooking: 'SELECT * FROM bookings WHERE id = ?1',
   deleteBooking: 'DELETE FROM bookings WHERE id = ?1',
+
+  // Support tickets (assignment A6). The routing decision is stored twice: the columns staff
+  // filter by, and the complete decision as JSON for auditing.
+  insertTicket: `
+    INSERT INTO support_tickets (id, message, equipment_id, booking_id, queue, urgency, needs_human,
+                                 confidence, decision_source, decision_model, fallback_reason, decision_json)
+    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
+    RETURNING *`,
+  // Newest first. rowid is the insertion order, so it also orders tickets filed in the same millisecond.
+  listTickets: 'SELECT * FROM support_tickets ORDER BY created_at DESC, rowid DESC',
+  listTicketsInQueue: 'SELECT * FROM support_tickets WHERE queue = ?1 ORDER BY created_at DESC, rowid DESC',
+  findTicket: 'SELECT * FROM support_tickets WHERE id = ?1',
+  deleteTicket: 'DELETE FROM support_tickets WHERE id = ?1',
 
   // Two bookings of the same equipment overlap when each one starts before the other
   // ends. The check and the write are one statement, so two simultaneous requests cannot
@@ -73,6 +105,41 @@ const toBooking = (row: BookingRow) => ({
   updatedAt: row.updated_at,
 })
 
+// A support_tickets row as stored in D1.
+type TicketRow = {
+  id: string
+  message: string
+  equipment_id: string | null
+  booking_id: string | null
+  queue: string
+  urgency: string
+  needs_human: number
+  confidence: number
+  decision_source: string
+  decision_model: string | null
+  fallback_reason: string | null
+  decision_json: string
+  created_at: string
+}
+
+// The complete decision lives in decision_json; the other decision columns exist for filtering.
+const toTicket = (row: TicketRow) => ({
+  id: row.id,
+  message: row.message,
+  equipmentId: row.equipment_id,
+  bookingId: row.booking_id,
+  decision: JSON.parse(row.decision_json) as RoutingDecision,
+  createdAt: row.created_at,
+})
+
+// The Workers AI binding types each known model's input separately. The router takes the
+// model id from configuration, so the binding is wrapped in the plain string interface the
+// router expects. Without the binding there is no runner, and the router falls back.
+function modelRunner(env: Bindings): ModelRunner | null {
+  const ai = env.AI as unknown as { run(model: string, input: unknown): Promise<unknown> } | undefined
+  return ai ? { run: (model, input) => ai.run(model, input) } : null
+}
+
 // Every error leaves the API in the one shape the contract defines: { "error": "..." }.
 const jsonError = (c: AppContext, status: 400 | 404 | 409 | 500, message: string) =>
   c.json({ error: message }, status)
@@ -115,6 +182,11 @@ const index = (c: AppContext) =>
       'POST /api/bookings',
       'PATCH /api/bookings/:id',
       'DELETE /api/bookings/:id',
+      'POST /api/support/route',
+      'POST /api/support/tickets',
+      'GET /api/support/tickets',
+      'GET /api/support/tickets/:id',
+      'DELETE /api/support/tickets/:id',
     ],
   })
 app.get('/', index)
@@ -198,6 +270,83 @@ app.patch('/api/bookings/:id', async (c) => {
 app.delete('/api/bookings/:id', async (c) => {
   const { meta } = await c.env.DB.prepare(SQL.deleteBooking).bind(c.req.param('id')).run()
   if (meta.changes === 0) return jsonError(c, 404, 'Booking not found')
+  return c.body(null, 204)
+})
+
+// ---------------------------------------------------------------------------------------
+// Support requests: the AI routing capability (assignment A6)
+// ---------------------------------------------------------------------------------------
+
+// A support message is at most 2000 characters, so a valid request body is a few kilobytes.
+// Anything over 16 KB is refused before it is read, which keeps a huge body from being parsed.
+const SUPPORT_BODY_MAX_BYTES = 16 * 1024
+app.use(
+  '/api/support/*',
+  bodyLimit({
+    maxSize: SUPPORT_BODY_MAX_BYTES,
+    onError: (c) => c.json({ error: `Request body must be at most ${SUPPORT_BODY_MAX_BYTES} bytes` }, 413),
+  }),
+)
+
+// The decision on its own, nothing stored. For trying the capability and for clients that
+// do their own follow-up.
+app.post('/api/support/route', async (c) => {
+  const body: unknown = await c.req.json().catch(() => undefined)
+  const result = validateSupportRequest(body)
+  if (!result.ok) return jsonError(c, 400, result.errors.join('; '))
+  return c.json(await routeSupportRequest(result.value, modelRunner(c.env), readSettings(c.env)))
+})
+
+// The downstream action: route the message and file it as a ticket in that queue.
+app.post('/api/support/tickets', async (c) => {
+  const body: unknown = await c.req.json().catch(() => undefined)
+  const result = validateSupportRequest(body)
+  if (!result.ok) return jsonError(c, 400, result.errors.join('; '))
+  const request = result.value
+
+  const equipmentId = request.context?.equipmentId ?? null
+  if (equipmentId !== null && !(await equipmentExists(c.env.DB, equipmentId))) {
+    return jsonError(c, 404, `Equipment '${equipmentId}' not found`)
+  }
+
+  const decision = await routeSupportRequest(request, modelRunner(c.env), readSettings(c.env))
+  const row = await c.env.DB.prepare(SQL.insertTicket)
+    .bind(
+      crypto.randomUUID(),
+      request.message,
+      equipmentId,
+      request.context?.bookingId ?? null,
+      decision.queue,
+      decision.urgency,
+      decision.needsHuman ? 1 : 0,
+      decision.confidence,
+      decision.source,
+      decision.model,
+      decision.fallbackReason,
+      JSON.stringify(decision),
+    )
+    .first<TicketRow>()
+  if (!row) throw new Error('the ticket was not stored') // INSERT ... RETURNING always returns the row
+  return c.json(toTicket(row), 201)
+})
+
+app.get('/api/support/tickets', async (c) => {
+  const queue = c.req.query('queue')
+  if (queue !== undefined && !isQueueName(queue)) return jsonError(c, 400, `queue must be one of ${QUEUES.join(', ')}`)
+  const statement = queue === undefined ? c.env.DB.prepare(SQL.listTickets) : c.env.DB.prepare(SQL.listTicketsInQueue).bind(queue)
+  const { results } = await statement.all<TicketRow>()
+  return c.json(results.map(toTicket))
+})
+
+app.get('/api/support/tickets/:id', async (c) => {
+  const row = await c.env.DB.prepare(SQL.findTicket).bind(c.req.param('id')).first<TicketRow>()
+  if (!row) return jsonError(c, 404, 'Ticket not found')
+  return c.json(toTicket(row))
+})
+
+app.delete('/api/support/tickets/:id', async (c) => {
+  const { meta } = await c.env.DB.prepare(SQL.deleteTicket).bind(c.req.param('id')).run()
+  if (meta.changes === 0) return jsonError(c, 404, 'Ticket not found')
   return c.body(null, 204)
 })
 

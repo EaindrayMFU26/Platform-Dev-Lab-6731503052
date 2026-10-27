@@ -1,0 +1,83 @@
+{
+  "description": "A raw answer of @cf/cloudflare/clef to the exact decision request below (buildDecisionRequest for the message of routing case 2). Recorded with a throwaway Worker that passes the request straight to env.AI.run(); that Worker is not part of the repository.",
+  "recordedAt": "2026-10-26T13:29:24.336Z",
+  "modelId": "@cf/cloudflare/clef",
+  "input": {
+    "message": "Camera B is not turning on and I need it for a shoot in 30 minutes!!",
+    "context": {
+      "equipmentId": "eq-2"
+    }
+  },
+  "request": {
+    "model": "clef",
+    "state": {
+      "service": "Campus Equipment Booking (projectors, cameras, meeting rooms)",
+      "message": "Camera B is not turning on and I need it for a shoot in 30 minutes!!",
+      "equipmentId": "eq-2"
+    },
+    "questions": {
+      "queue": {
+        "type": "choice",
+        "instructions": "Which support queue should handle this message sent to the campus equipment booking service?",
+        "criteria": {
+          "booking_change": "The sender wants to create, move, extend, shorten or cancel a booking, or reports a booking conflict or double booking",
+          "equipment_fault": "The equipment or room facilities are broken, missing, damaged or not working",
+          "access_or_account": "The sender cannot log in, is not authorised, or has an account, student ID or permission problem with the booking system",
+          "general_question": "A question about rules, availability, policies or how to use the service, or anything that fits no other queue"
+        }
+      },
+      "urgency": {
+        "type": "score",
+        "instructions": "How urgent is this message?",
+        "criteria": [
+          "Low: no deadline mentioned, can wait several days",
+          "Normal: should be handled within one working day",
+          "High: the sender is blocked right now or within the next few hours"
+        ]
+      },
+      "needs_human": {
+        "type": "noul",
+        "instructions": "A staff member must read this message personally before any automatic action is taken, for example because it is ambiguous, a complaint, a safety problem, or fits no queue well."
+      }
+    }
+  },
+  "answer": {
+    "model": "clef",
+    "answers": {
+      "queue": {
+        "type": "choice",
+        "choice": "equipment_fault",
+        "probabilities": {
+          "booking_change": 0.01,
+          "equipment_fault": 0.9798,
+          "access_or_account": 0.0048,
+          "general_question": 0.0054
+        },
+        "confidence": 0.9469
+      },
+      "urgency": {
+        "type": "score",
+        "score": 1.9461,
+        "legend": {
+          "0": "Low: no deadline mentioned, can wait several days",
+          "1": "Normal: should be handled within one working day",
+          "2": "High: the sender is blocked right now or within the next few hours"
+        },
+        "probabilities": {
+          "0": 0.0105,
+          "1": 0.033,
+          "2": 0.9565
+        },
+        "confidence": 0.8743
+      },
+      "needs_human": {
+        "type": "noul",
+        "noul": 0.6099
+      }
+    },
+    "usage": {
+      "input_tokens": 518,
+      "output_tokens": 0
+    }
+  }
+}

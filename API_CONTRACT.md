@@ -20,6 +20,17 @@ the test case that verifies it.
 | `POST` | `/bookings` | 201 | 400, 404, 409 | Create a booking |
 | `PATCH` | `/bookings/:id` | 200 | 400, 404, 409 | Update a booking |
 | `DELETE` | `/bookings/:id` | 204 | 404 | Delete a booking |
+| `POST` | `/support/route` | 200 | 400, 413 | Route a support message: the decision only (A6) |
+| `POST` | `/support/tickets` | 201 | 400, 404, 413 | Route a support message and file it as a ticket (A6) |
+| `GET` | `/support/tickets` | 200 | 400 | List tickets, optionally one queue: `?queue=<name>` (A6) |
+| `GET` | `/support/tickets/:id` | 200 | 404 | Get one ticket (A6) |
+| `DELETE` | `/support/tickets/:id` | 204 | 404 | Delete a ticket (A6) |
+
+The five `/support` routes were added for assignment A6 and are specified in
+[Support requests](#support-requests-assignment-a6) at the end of this document; the booking
+contract above them is unchanged. Until the A6 version is deployed, the `/support` routes exist
+only on a local server (`http://localhost:8787/api`); the deployed base URL answers them with
+`404 Route not found`.
 
 Resources are nouns and the HTTP method is the verb. `OPTIONS` on any path answers a CORS preflight
 with 204 (see the README). `GET` on the base URL itself returns 200 with a short index of these
@@ -226,3 +237,156 @@ The brief does not settle these points. Case numbers refer to [TEST_EVIDENCE.md]
 `GET`, `PATCH` and `DELETE` can be repeated without changing the outcome. `POST` creates a new
 booking each time it succeeds, but a repeated `POST` of the same booking cannot create a duplicate:
 the first one holds the slot, so the repeat gets 409.
+
+## Support requests (assignment A6)
+
+A support message is routed by an AI decision model (Cloudflare Workers AI `@cf/cloudflare/clef`,
+the same choice / score / noul questions as Jev) with a deterministic keyword fallback. The code
+is [src/support-router.ts](src/support-router.ts); the design, the evidence and the reflection are
+in the [A6 report](docs/A6/A6_6731503052.md). These routes follow the conventions above: JSON in
+and out, every error exactly `{ "error": "<message>" }`, 400 and 404 with the meanings under
+[Why 400, 404 and 409](#why-400-404-and-409).
+
+### Support request (input)
+
+| Field | Type | Rules |
+|---|---|---|
+| `message` | string | Required. Not blank, at most 2000 characters, valid Unicode, no NUL or other control characters (tabs and line breaks are allowed). Surrounding spaces are removed. |
+| `context` | object | Optional. Only the two properties below are read; anything else is ignored. |
+| `context.equipmentId` | string | Optional. Not blank, at most 64 characters. On `POST /support/tickets` it must be the `id` of existing equipment (404 otherwise); `POST /support/route` does not look it up. |
+| `context.bookingId` | string | Optional. Not blank, at most 64 characters. Stored with the ticket as given; it is not checked against the bookings table, because a ticket may outlive the booking it talks about. |
+
+### Routing decision (output)
+
+Both the model and the fallback produce exactly this shape.
+
+| Field | Type | Values and meaning |
+|---|---|---|
+| `queue` | string | One of `booking_change`, `equipment_fault`, `access_or_account`, `general_question`. |
+| `urgency` | string | One of `low`, `normal`, `high`: the most probable of the three score levels. |
+| `needsHuman` | boolean | `true` when a person must read the message before any automatic action: the model's yes/no probability is 0.5 or more, the model's confidence in the queue is below `ROUTER_MIN_CONFIDENCE` (0.6), or the decision came from the fallback. |
+| `confidence` | number 0 to 1 | The model's confidence in the queue. `0` for a fallback decision, which has no probabilities. |
+| `source` | string | `model` or `fallback`. |
+| `model` | string or null | The configured model id (`@cf/cloudflare/clef`) when the model decided, `null` for the fallback. |
+| `fallbackReason` | string or null | `null` for a model decision; otherwise `model_unavailable` (no AI binding), `model_error` (the call failed), `model_timeout` (no answer within `ROUTER_TIMEOUT_MS`, 8000 ms) or `invalid_model_output` (the answer did not fit the schema). |
+| `details.queueProbabilities` | object | A probability for each of the four queues, as the model gave them; they add up to 1 within 0.05 (not renormalised). All `0` for the fallback. |
+| `details.urgencyScore` | number 0 to 2 | The probability-weighted urgency (0 low, 2 high). For the fallback, the index of the chosen level. |
+| `details.urgencyProbabilities` | object | A probability for `low`, `normal` and `high`. All `0` for the fallback. |
+| `details.needsHumanProbability` | number 0 to 1 | The model's answer to the needs-a-person question; `1` for the fallback. |
+| `details.reasons` | array of strings | Why a person is needed, or why the fallback decided and which keywords it matched. An error text from the AI service is cut to 200 characters. |
+| `details.latencyMs` | integer | Time spent deciding, measured inside the Worker. |
+| `details.inputTokens` | integer or null | Tokens the model read, as reported by the service; `null` for the fallback. |
+| `details.reportedModel` | string or null | The model name reported by the service (`clef`); `null` for the fallback. |
+
+A fallback decision is still a success (200 or 201): the capability always answers, and `source`
+and `fallbackReason` say how. The output is validated before it is returned: a model answer with an
+unknown label, a label that is not its own most probable one, a missing or impossible probability,
+or probabilities whose sum is not within 0.05 of 1 is
+discarded and replaced by a fallback decision with `fallbackReason: "invalid_model_output"`.
+
+### Ticket
+
+| Field | Type | Rules |
+|---|---|---|
+| `id` | string (UUID) | Generated by the server. |
+| `message` | string | The message as stored (trimmed). |
+| `equipmentId` | string or null | From `context.equipmentId`. |
+| `bookingId` | string or null | From `context.bookingId`. |
+| `decision` | object | The routing decision above, exactly as it was made when the ticket was filed. |
+| `createdAt` | string, ISO 8601 date-time | Set by the server. |
+
+### `POST /support/route`
+
+Request body:
+
+```json
+{ "message": "Camera B is not turning on and I need it for a shoot in 30 minutes!!", "context": { "equipmentId": "eq-2" } }
+```
+
+`200 OK` with a routing decision (this one is the model's real answer, case 2 of
+[SUPPORT_ROUTER_EVIDENCE.md](SUPPORT_ROUTER_EVIDENCE.md)):
+
+```json
+{
+  "queue": "equipment_fault",
+  "urgency": "high",
+  "needsHuman": true,
+  "confidence": 0.9469,
+  "source": "model",
+  "model": "@cf/cloudflare/clef",
+  "fallbackReason": null,
+  "details": {
+    "queueProbabilities": { "booking_change": 0.01, "equipment_fault": 0.9798, "access_or_account": 0.0048, "general_question": 0.0054 },
+    "urgencyScore": 1.9461,
+    "urgencyProbabilities": { "low": 0.0105, "normal": 0.033, "high": 0.9565 },
+    "needsHumanProbability": 0.6099,
+    "reasons": ["the model judged that a person should read this message (probability 0.6099)"],
+    "latencyMs": 1294,
+    "inputTokens": 518,
+    "reportedModel": "clef"
+  }
+}
+```
+
+The same request while the model call fails (case 2 of
+[SUPPORT_ROUTER_FALLBACK_EVIDENCE.md](SUPPORT_ROUTER_FALLBACK_EVIDENCE.md), shortened):
+
+```json
+{
+  "queue": "equipment_fault", "urgency": "high", "needsHuman": true, "confidence": 0,
+  "source": "fallback", "model": null, "fallbackReason": "model_error",
+  "details": {
+    "queueProbabilities": { "booking_change": 0, "equipment_fault": 0, "access_or_account": 0, "general_question": 0 },
+    "urgencyScore": 2, "urgencyProbabilities": { "low": 0, "normal": 0, "high": 0 }, "needsHumanProbability": 1,
+    "reasons": [
+      "the model call failed: AiError: 5007: No such model @cf/cloudflare/no-such-model or task",
+      "keyword rules matched: equipment_fault <- \"not turning on\"; high urgency <- \"minutes\"",
+      "a fallback decision is always checked by a person"
+    ],
+    "latencyMs": 84, "inputTokens": null, "reportedModel": null
+  }
+}
+```
+
+### `POST /support/tickets`
+
+Same request body. `201 Created` with the ticket, decision included:
+
+```json
+{
+  "id": "80ed35a5-d198-4626-8918-8f7d1b7d14fa",
+  "message": "Camera B is not turning on and I need it for a shoot in 30 minutes!!",
+  "equipmentId": "eq-2",
+  "bookingId": null,
+  "decision": { "queue": "equipment_fault", "urgency": "high", "needsHuman": true, "confidence": 0.9469, "source": "model", "...": "as above" },
+  "createdAt": "2026-10-26T14:36:01.300Z"
+}
+```
+
+### `GET /support/tickets` and `GET /support/tickets/:id`
+
+`200 OK` with an array of tickets, newest first (tickets filed in the same millisecond are in
+reverse order of filing), or with one ticket. `?queue=equipment_fault` limits the list to one
+queue; any other value is 400. The list has no pagination.
+
+### `DELETE /support/tickets/:id`
+
+`204 No Content`, or 404 when no ticket has that id.
+
+### Errors of the support routes
+
+| Status | When | Example `error` |
+|---:|---|---|
+| 400 | Body is not a JSON object | `Request body must be a valid JSON object` |
+| 413 | The request body is larger than 16 KB (judged from `Content-Length` before anything is read; a body without a length is read only until it passes 16 KB) | `Request body must be at most 16384 bytes` |
+| 400 | `message` is missing, blank, too long or not a string | `message is required`, `message must be at most 2000 characters` |
+| 400 | `message` contains NUL or another control character, or is not valid Unicode | `message must not contain control characters (tabs and line breaks are allowed)` |
+| 400 | `context` is not an object, or an id in it is invalid | `context must be an object`, `context.equipmentId must be a non-empty string` |
+| 400 | `?queue=` is not one of the four queue names | `queue must be one of booking_change, equipment_fault, access_or_account, general_question` |
+| 404 | `context.equipmentId` matches no equipment (`POST /support/tickets` only) | `Equipment 'eq-999' not found` |
+| 404 | No ticket has that id | `Ticket not found` |
+
+Order of checks for `POST /support/tickets`: 413 (body size), then 400 (body and fields), then
+404 (equipment), then the decision is made and the ticket stored. A failure of the model is never
+an error status: it becomes a fallback decision. The 413 limit applies to every `/support` route;
+the booking routes are unchanged.

@@ -1,0 +1,33 @@
+{
+  "model": "jev-latest",
+  "state": {
+    "service": "Campus Equipment Booking (projectors, cameras, meeting rooms)",
+    "message": "Camera B is not turning on and I need it for a shoot in 30 minutes!!",
+    "equipmentId": "eq-2"
+  },
+  "questions": {
+    "queue": {
+      "type": "choice",
+      "instructions": "Which support queue should handle this message sent to the campus equipment booking service?",
+      "criteria": {
+        "booking_change": "The sender wants to create, move, extend, shorten or cancel a booking, or reports a booking conflict or double booking",
+        "equipment_fault": "The equipment or room facilities are broken, missing, damaged or not working",
+        "access_or_account": "The sender cannot log in, is not authorised, or has an account, student ID or permission problem with the booking system",
+        "general_question": "A question about rules, availability, policies or how to use the service, or anything that fits no other queue"
+      }
+    },
+    "urgency": {
+      "type": "score",
+      "instructions": "How urgent is this message?",
+      "criteria": [
+        "Low: no deadline mentioned, can wait several days",
+        "Normal: should be handled within one working day",
+        "High: the sender is blocked right now or within the next few hours"
+      ]
+    },
+    "needs_human": {
+      "type": "noul",
+      "instructions": "A staff member must read this message personally before any automatic action is taken, for example because it is ambiguous, a complaint, a safety problem, or fits no queue well."
+    }
+  }
+}
