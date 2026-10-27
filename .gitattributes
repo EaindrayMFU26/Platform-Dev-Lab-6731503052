@@ -1,4 +1,5 @@
-# Shell scripts must keep LF line endings, also when checked out on Windows,
-# otherwise bash cannot run them.
-* text=auto
+# Every text file keeps LF line endings, also when checked out on Windows. Shell scripts need
+# them, and the SHA-256 hashes recorded in eval/ (FREEZE.txt, A6_UNIT_ON_A7_INPUTS.sha256 and the
+# run logs) were taken of the LF files.
+* text=auto eol=lf
 *.sh text eol=lf

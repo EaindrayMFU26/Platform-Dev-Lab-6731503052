@@ -1,0 +1,720 @@
+{
+  "runAt": "2026-10-26T15:21:49.651Z",
+  "rounds": 5,
+  "servers": {
+    "baseline": "http://localhost:8787/api",
+    "improved": "http://localhost:8791/api"
+  },
+  "pairs": [
+    {
+      "round": 1,
+      "id": "T01",
+      "first": "baseline",
+      "baseline": {
+        "clientMs": 878.3,
+        "workerMs": 667,
+        "inputTokens": 520,
+        "sameAsMainRun": true
+      },
+      "improved": {
+        "clientMs": 650.9,
+        "workerMs": 438,
+        "inputTokens": 866,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 1,
+      "id": "T02",
+      "first": "baseline",
+      "baseline": {
+        "clientMs": 1402.1,
+        "workerMs": 1188,
+        "inputTokens": 505,
+        "sameAsMainRun": true
+      },
+      "improved": {
+        "clientMs": 1493.1,
+        "workerMs": 1284,
+        "inputTokens": 847,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 1,
+      "id": "T03",
+      "first": "baseline",
+      "baseline": {
+        "clientMs": 1163,
+        "workerMs": 950,
+        "inputTokens": 501,
+        "sameAsMainRun": true
+      },
+      "improved": {
+        "clientMs": 1584.2,
+        "workerMs": 1376,
+        "inputTokens": 864,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 1,
+      "id": "T04",
+      "first": "baseline",
+      "baseline": {
+        "clientMs": 640.5,
+        "workerMs": 415,
+        "inputTokens": 512,
+        "sameAsMainRun": true
+      },
+      "improved": {
+        "clientMs": 747.4,
+        "workerMs": 520,
+        "inputTokens": 858,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 1,
+      "id": "T05",
+      "first": "baseline",
+      "baseline": {
+        "clientMs": 584.1,
+        "workerMs": 373,
+        "inputTokens": 495,
+        "sameAsMainRun": true
+      },
+      "improved": {
+        "clientMs": 590.6,
+        "workerMs": 368,
+        "inputTokens": 825,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 1,
+      "id": "T06",
+      "first": "baseline",
+      "baseline": {
+        "clientMs": 1362.8,
+        "workerMs": 1127,
+        "inputTokens": 512,
+        "sameAsMainRun": true
+      },
+      "improved": {
+        "clientMs": 812.1,
+        "workerMs": 603,
+        "inputTokens": 771,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 1,
+      "id": "T09",
+      "first": "baseline",
+      "baseline": {
+        "clientMs": 924.7,
+        "workerMs": 713,
+        "inputTokens": 521,
+        "sameAsMainRun": true
+      },
+      "improved": {
+        "clientMs": 854.5,
+        "workerMs": 640,
+        "inputTokens": 864,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 1,
+      "id": "T10",
+      "first": "baseline",
+      "baseline": {
+        "clientMs": 530.9,
+        "workerMs": 315,
+        "inputTokens": 507,
+        "sameAsMainRun": true
+      },
+      "improved": {
+        "clientMs": 563.9,
+        "workerMs": 356,
+        "inputTokens": 799,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 2,
+      "id": "T01",
+      "first": "improved",
+      "improved": {
+        "clientMs": 740.9,
+        "workerMs": 531,
+        "inputTokens": 866,
+        "sameAsMainRun": true
+      },
+      "baseline": {
+        "clientMs": 528.4,
+        "workerMs": 313,
+        "inputTokens": 520,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 2,
+      "id": "T02",
+      "first": "improved",
+      "improved": {
+        "clientMs": 937,
+        "workerMs": 713,
+        "inputTokens": 847,
+        "sameAsMainRun": true
+      },
+      "baseline": {
+        "clientMs": 1105.8,
+        "workerMs": 897,
+        "inputTokens": 505,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 2,
+      "id": "T03",
+      "first": "improved",
+      "improved": {
+        "clientMs": 666.7,
+        "workerMs": 435,
+        "inputTokens": 864,
+        "sameAsMainRun": true
+      },
+      "baseline": {
+        "clientMs": 2438.4,
+        "workerMs": 2223,
+        "inputTokens": 501,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 2,
+      "id": "T04",
+      "first": "improved",
+      "improved": {
+        "clientMs": 677.1,
+        "workerMs": 450,
+        "inputTokens": 858,
+        "sameAsMainRun": true
+      },
+      "baseline": {
+        "clientMs": 389,
+        "workerMs": 179,
+        "inputTokens": 512,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 2,
+      "id": "T05",
+      "first": "improved",
+      "improved": {
+        "clientMs": 1648.9,
+        "workerMs": 1432,
+        "inputTokens": 825,
+        "sameAsMainRun": true
+      },
+      "baseline": {
+        "clientMs": 1924.8,
+        "workerMs": 1702,
+        "inputTokens": 495,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 2,
+      "id": "T06",
+      "first": "improved",
+      "improved": {
+        "clientMs": 739.7,
+        "workerMs": 516,
+        "inputTokens": 771,
+        "sameAsMainRun": true
+      },
+      "baseline": {
+        "clientMs": 2775.7,
+        "workerMs": 2555,
+        "inputTokens": 512,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 2,
+      "id": "T09",
+      "first": "improved",
+      "improved": {
+        "clientMs": 689.1,
+        "workerMs": 462,
+        "inputTokens": 864,
+        "sameAsMainRun": true
+      },
+      "baseline": {
+        "clientMs": 584.1,
+        "workerMs": 354,
+        "inputTokens": 521,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 2,
+      "id": "T10",
+      "first": "improved",
+      "improved": {
+        "clientMs": 682.5,
+        "workerMs": 468,
+        "inputTokens": 799,
+        "sameAsMainRun": true
+      },
+      "baseline": {
+        "clientMs": 1032.2,
+        "workerMs": 800,
+        "inputTokens": 507,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 3,
+      "id": "T01",
+      "first": "baseline",
+      "baseline": {
+        "clientMs": 1556.6,
+        "workerMs": 1340,
+        "inputTokens": 520,
+        "sameAsMainRun": true
+      },
+      "improved": {
+        "clientMs": 1482.9,
+        "workerMs": 1272,
+        "inputTokens": 866,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 3,
+      "id": "T02",
+      "first": "baseline",
+      "baseline": {
+        "clientMs": 646,
+        "workerMs": 418,
+        "inputTokens": 505,
+        "sameAsMainRun": true
+      },
+      "improved": {
+        "clientMs": 749.9,
+        "workerMs": 528,
+        "inputTokens": 847,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 3,
+      "id": "T03",
+      "first": "baseline",
+      "baseline": {
+        "clientMs": 1348.3,
+        "workerMs": 1126,
+        "inputTokens": 501,
+        "sameAsMainRun": true
+      },
+      "improved": {
+        "clientMs": 651.5,
+        "workerMs": 426,
+        "inputTokens": 864,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 3,
+      "id": "T04",
+      "first": "baseline",
+      "baseline": {
+        "clientMs": 596.7,
+        "workerMs": 378,
+        "inputTokens": 512,
+        "sameAsMainRun": true
+      },
+      "improved": {
+        "clientMs": 862.3,
+        "workerMs": 638,
+        "inputTokens": 858,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 3,
+      "id": "T05",
+      "first": "baseline",
+      "baseline": {
+        "clientMs": 624.3,
+        "workerMs": 407,
+        "inputTokens": 495,
+        "sameAsMainRun": true
+      },
+      "improved": {
+        "clientMs": 625.6,
+        "workerMs": 391,
+        "inputTokens": 825,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 3,
+      "id": "T06",
+      "first": "baseline",
+      "baseline": {
+        "clientMs": 438.8,
+        "workerMs": 217,
+        "inputTokens": 512,
+        "sameAsMainRun": true
+      },
+      "improved": {
+        "clientMs": 603,
+        "workerMs": 391,
+        "inputTokens": 771,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 3,
+      "id": "T09",
+      "first": "baseline",
+      "baseline": {
+        "clientMs": 883.3,
+        "workerMs": 671,
+        "inputTokens": 521,
+        "sameAsMainRun": true
+      },
+      "improved": {
+        "clientMs": 476.8,
+        "workerMs": 252,
+        "inputTokens": 864,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 3,
+      "id": "T10",
+      "first": "baseline",
+      "baseline": {
+        "clientMs": 782.7,
+        "workerMs": 565,
+        "inputTokens": 507,
+        "sameAsMainRun": true
+      },
+      "improved": {
+        "clientMs": 630.7,
+        "workerMs": 403,
+        "inputTokens": 799,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 4,
+      "id": "T01",
+      "first": "improved",
+      "improved": {
+        "clientMs": 750.3,
+        "workerMs": 520,
+        "inputTokens": 866,
+        "sameAsMainRun": true
+      },
+      "baseline": {
+        "clientMs": 558.1,
+        "workerMs": 339,
+        "inputTokens": 520,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 4,
+      "id": "T02",
+      "first": "improved",
+      "improved": {
+        "clientMs": 931.4,
+        "workerMs": 720,
+        "inputTokens": 847,
+        "sameAsMainRun": true
+      },
+      "baseline": {
+        "clientMs": 870.6,
+        "workerMs": 648,
+        "inputTokens": 505,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 4,
+      "id": "T03",
+      "first": "improved",
+      "improved": {
+        "clientMs": 804.3,
+        "workerMs": 593,
+        "inputTokens": 864,
+        "sameAsMainRun": true
+      },
+      "baseline": {
+        "clientMs": 909.4,
+        "workerMs": 676,
+        "inputTokens": 501,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 4,
+      "id": "T04",
+      "first": "improved",
+      "improved": {
+        "clientMs": 2409.7,
+        "workerMs": 2190,
+        "inputTokens": 858,
+        "sameAsMainRun": true
+      },
+      "baseline": {
+        "clientMs": 1646.6,
+        "workerMs": 1418,
+        "inputTokens": 512,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 4,
+      "id": "T05",
+      "first": "improved",
+      "improved": {
+        "clientMs": 778,
+        "workerMs": 564,
+        "inputTokens": 825,
+        "sameAsMainRun": true
+      },
+      "baseline": {
+        "clientMs": 561.1,
+        "workerMs": 335,
+        "inputTokens": 495,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 4,
+      "id": "T06",
+      "first": "improved",
+      "improved": {
+        "clientMs": 1580.9,
+        "workerMs": 1361,
+        "inputTokens": 771,
+        "sameAsMainRun": true
+      },
+      "baseline": {
+        "clientMs": 1799.5,
+        "workerMs": 1589,
+        "inputTokens": 512,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 4,
+      "id": "T09",
+      "first": "improved",
+      "improved": {
+        "clientMs": 623.1,
+        "workerMs": 413,
+        "inputTokens": 864,
+        "sameAsMainRun": true
+      },
+      "baseline": {
+        "clientMs": 647.2,
+        "workerMs": 420,
+        "inputTokens": 521,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 4,
+      "id": "T10",
+      "first": "improved",
+      "improved": {
+        "clientMs": 589.5,
+        "workerMs": 378,
+        "inputTokens": 799,
+        "sameAsMainRun": true
+      },
+      "baseline": {
+        "clientMs": 581.7,
+        "workerMs": 342,
+        "inputTokens": 507,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 5,
+      "id": "T01",
+      "first": "baseline",
+      "baseline": {
+        "clientMs": 1126.4,
+        "workerMs": 905,
+        "inputTokens": 520,
+        "sameAsMainRun": true
+      },
+      "improved": {
+        "clientMs": 2133,
+        "workerMs": 1901,
+        "inputTokens": 866,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 5,
+      "id": "T02",
+      "first": "baseline",
+      "baseline": {
+        "clientMs": 717.4,
+        "workerMs": 496,
+        "inputTokens": 505,
+        "sameAsMainRun": true
+      },
+      "improved": {
+        "clientMs": 709.9,
+        "workerMs": 479,
+        "inputTokens": 847,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 5,
+      "id": "T03",
+      "first": "baseline",
+      "baseline": {
+        "clientMs": 963.2,
+        "workerMs": 737,
+        "inputTokens": 501,
+        "sameAsMainRun": true
+      },
+      "improved": {
+        "clientMs": 1707.1,
+        "workerMs": 1485,
+        "inputTokens": 864,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 5,
+      "id": "T04",
+      "first": "baseline",
+      "baseline": {
+        "clientMs": 1794.9,
+        "workerMs": 1568,
+        "inputTokens": 512,
+        "sameAsMainRun": true
+      },
+      "improved": {
+        "clientMs": 2506.6,
+        "workerMs": 2275,
+        "inputTokens": 858,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 5,
+      "id": "T05",
+      "first": "baseline",
+      "baseline": {
+        "clientMs": 1011.1,
+        "workerMs": 787,
+        "inputTokens": 495,
+        "sameAsMainRun": true
+      },
+      "improved": {
+        "clientMs": 650.2,
+        "workerMs": 437,
+        "inputTokens": 825,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 5,
+      "id": "T06",
+      "first": "baseline",
+      "baseline": {
+        "clientMs": 703.1,
+        "workerMs": 484,
+        "inputTokens": 512,
+        "sameAsMainRun": true
+      },
+      "improved": {
+        "clientMs": 895.5,
+        "workerMs": 672,
+        "inputTokens": 771,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 5,
+      "id": "T09",
+      "first": "baseline",
+      "baseline": {
+        "clientMs": 727,
+        "workerMs": 487,
+        "inputTokens": 521,
+        "sameAsMainRun": true
+      },
+      "improved": {
+        "clientMs": 1335.5,
+        "workerMs": 1106,
+        "inputTokens": 864,
+        "sameAsMainRun": true
+      }
+    },
+    {
+      "round": 5,
+      "id": "T10",
+      "first": "baseline",
+      "baseline": {
+        "clientMs": 699.7,
+        "workerMs": 488,
+        "inputTokens": 507,
+        "sameAsMainRun": true
+      },
+      "improved": {
+        "clientMs": 939,
+        "workerMs": 711,
+        "inputTokens": 799,
+        "sameAsMainRun": true
+      }
+    }
+  ],
+  "baseline": {
+    "clientMs": {
+      "p50": 870.6,
+      "p95": 1924.8,
+      "max": 2775.7
+    },
+    "workerMs": {
+      "p50": 648,
+      "p95": 1702,
+      "max": 2555
+    }
+  },
+  "improved": {
+    "clientMs": {
+      "p50": 749.9,
+      "p95": 2133,
+      "max": 2506.6
+    },
+    "workerMs": {
+      "p50": 528,
+      "p95": 1901,
+      "max": 2275
+    }
+  },
+  "pairedDifferenceMs": {
+    "p50": 7.7999999999999545,
+    "improvedSlowerIn": 23,
+    "of": 40
+  },
+  "decisionsSameAsMainRuns": true
+}

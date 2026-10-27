@@ -16,5 +16,20 @@
       "database_id": "2eb3e2a7-4b54-4eba-aa15-c0aa0c3a0b2c",
       "migrations_dir": "migrations"
     }
-  ]
+  ],
+
+  // Workers AI, used by the support-request router (assignment A6). The model runs on
+  // Cloudflare, also during `npm run dev` ("remote"), and counts against the account's free
+  // daily quota.
+  "ai": { "binding": "AI", "remote": true },
+
+  // Settings of the router. Override locally without editing this file:
+  //   npx wrangler dev --var ROUTER_MODEL:@cf/cloudflare/no-such-model   (forces the fallback)
+  //   npm run dev -- --var ROUTER_GROUNDING:on   (A7: send the relevant support guidelines to the model)
+  "vars": {
+    "ROUTER_MODEL": "@cf/cloudflare/clef",
+    "ROUTER_TIMEOUT_MS": "8000",
+    "ROUTER_MIN_CONFIDENCE": "0.6",
+    "ROUTER_GROUNDING": "off"
+  }
 }

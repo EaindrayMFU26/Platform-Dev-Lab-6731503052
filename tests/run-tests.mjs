@@ -5,13 +5,12 @@
 //   npm test -- https://example.com/api      (any other Base API URL)
 //
 // The tests only use far-future dates (2030) and delete every booking they create.
-import { spawn } from 'node:child_process'
 import { writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import { QUIET, curlArgs as buildCurlArgs, errorShapeProblem, runCurl, runCurlVersion, showCommand, showResponse } from './curl.mjs'
 
 const BASE_URL = (process.argv[2] ?? process.env.BASE_URL ?? 'http://localhost:8787/api').replace(/\/+$/, '')
 const EVIDENCE_FILE = fileURLToPath(new URL('../TEST_EVIDENCE.md', import.meta.url))
-const QUIET = ['-s', '-S', '--max-time', '20'] // added to every command: no progress meter, never hang
 const MARK = '[api-test]' // every booking created here carries this in "purpose"
 const DAY = '2030-01-15'
 const at = (time) => `${DAY}T${time}:00.000Z`
@@ -29,81 +28,8 @@ const booking = (equipmentId, start, end, extra = {}) => ({
   ...extra,
 })
 
-// ---------------------------------------------------------------------------------------
-// curl helpers
-// ---------------------------------------------------------------------------------------
-
-function curlArgs({ method = 'GET', path, json, rawBody, headers = {} }) {
-  const args = ['-i']
-  if (method !== 'GET') args.push('-X', method)
-  args.push(BASE_URL + path)
-  for (const [name, value] of Object.entries(headers)) args.push('-H', `${name}: ${value}`)
-  const body = rawBody ?? (json === undefined ? undefined : JSON.stringify(json))
-  if (body !== undefined) args.push('-H', 'Content-Type: application/json', '-d', body)
-  return args
-}
-
-function runCurl(args) {
-  return new Promise((resolve) => {
-    const child = spawn('curl', [...QUIET, ...args])
-    let raw = ''
-    let stderr = ''
-    child.stdout.setEncoding('utf8').on('data', (chunk) => (raw += chunk))
-    child.stderr.setEncoding('utf8').on('data', (chunk) => (stderr += chunk))
-    child.on('error', (error) => resolve({ exitCode: -1, stderr: String(error), ...parseResponse('') }))
-    child.on('close', (exitCode) => resolve({ exitCode, stderr: stderr.trim(), ...parseResponse(raw) }))
-  })
-}
-
-// Splits `curl -i` output into status line, headers and body.
-function parseResponse(raw) {
-  const text = raw.replace(/\r\n/g, '\n')
-  const gap = text.indexOf('\n\n')
-  const head = gap === -1 ? text : text.slice(0, gap)
-  const body = gap === -1 ? '' : text.slice(gap + 2)
-  const [statusLine = '', ...headerLines] = head.split('\n')
-  const headers = {}
-  for (const line of headerLines) {
-    const colon = line.indexOf(':')
-    if (colon > 0) headers[line.slice(0, colon).trim().toLowerCase()] = line.slice(colon + 1).trim()
-  }
-  let json
-  try {
-    json = body === '' ? undefined : JSON.parse(body)
-  } catch {
-    json = undefined
-  }
-  return { status: Number(statusLine.split(' ')[1]) || 0, statusLine, headers, body, json }
-}
-
-// The command as you would type it in a bash-style shell (Git Bash, macOS, Linux).
-function showCommand(args) {
-  const quote = (arg) => (/^[\w@%+=:,./-]+$/.test(arg) ? arg : `'${arg.replaceAll("'", `'\\''`)}'`)
-  let text = 'curl'
-  for (let i = 0; i < args.length; i++) {
-    const startsOption = args[i] === '-H' || args[i] === '-d'
-    text += (startsOption ? ' \\\n  ' : ' ') + quote(args[i])
-  }
-  return text
-}
-
-function showResponse(res) {
-  const shown = Object.entries(res.headers)
-    .filter(([name]) => name === 'content-type' || name.startsWith('access-control-'))
-    .map(([name, value]) => `${name}: ${value}`)
-  const body = res.body.length > 900 ? `${res.body.slice(0, 900)} ... [${res.body.length} characters in total]` : res.body
-  return [res.statusLine || `(no response: ${res.stderr})`, ...shown, '', body === '' ? '(empty body)' : body].join('\n')
-}
-
-// The contract: every error is JSON of the form { "error": "<message>" } and nothing else.
-function errorShapeProblem(res) {
-  if (!(res.headers['content-type'] ?? '').includes('application/json')) return 'error response is not JSON'
-  const keys = res.json && typeof res.json === 'object' ? Object.keys(res.json) : []
-  if (keys.length !== 1 || keys[0] !== 'error' || typeof res.json.error !== 'string' || res.json.error === '') {
-    return 'error body is not exactly { "error": "<message>" }'
-  }
-  return null
-}
+// The curl helpers live in tests/curl.mjs and are shared with the support-router tests.
+const curlArgs = (request) => buildCurlArgs(BASE_URL, request)
 
 // ---------------------------------------------------------------------------------------
 // Test cases (run in order; later cases use the ids saved by earlier ones)
@@ -580,16 +506,6 @@ async function main() {
 
   console.log(`\n${passedCount} passed, ${failedCount} failed. Evidence written to TEST_EVIDENCE.md`)
   process.exitCode = failedCount === 0 ? 0 : 1
-}
-
-function runCurlVersion() {
-  return new Promise((resolve) => {
-    const child = spawn('curl', ['--version'])
-    let out = ''
-    child.stdout.setEncoding('utf8').on('data', (chunk) => (out += chunk))
-    child.on('error', () => resolve(''))
-    child.on('close', () => resolve(out.split('\n')[0].trim()))
-  })
 }
 
 await main()

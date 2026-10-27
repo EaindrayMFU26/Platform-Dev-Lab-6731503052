@@ -1,0 +1,110 @@
+{
+  "description": "Evaluation set of assignment A7 for the support-request router of A6. The expected results follow the platform's support guidelines in src/knowledge-base.json (KB01 to KB10) and were written before any evaluation run.",
+  "scoring": "A case is correct when queue, urgency and needsHuman all equal the expected values. For a fallback case the decision must also come from the fallback (source \"fallback\") with the expected fallbackReason. Every case is sent several times; it counts as correct only if every repetition is correct.",
+  "scenarios": {
+    "model": "the normal server: the decision model answers",
+    "model_error": "a server started with a model id that does not exist (npm run dev:fallback), so the model call fails",
+    "model_timeout": "a server started with a 1 ms model time limit (npm run dev:timeout), so the model never answers in time"
+  },
+  "cases": [
+    {
+      "id": "T01",
+      "type": "normal",
+      "scenario": "model",
+      "input": {
+        "message": "Please move my Projector A booking from Thursday 10:00 to Friday at the same time.",
+        "context": { "equipmentId": "eq-1" }
+      },
+      "expected": { "queue": "booking_change", "urgency": "normal", "needsHuman": false, "source": "model" },
+      "expectedReview": "handled automatically (needsHuman false)",
+      "reason": "Moving a booking is a booking change (KB01). It is not needed within the next 4 hours, so the urgency is normal (KB05). One clear booking change is handled automatically (KB07)."
+    },
+    {
+      "id": "T02",
+      "type": "normal",
+      "scenario": "model",
+      "input": { "message": "I forgot my password and can't sign in to the booking system." },
+      "expected": { "queue": "access_or_account", "urgency": "normal", "needsHuman": false, "source": "model" },
+      "expectedReview": "handled automatically (needsHuman false)",
+      "reason": "A forgotten password is an access problem (KB03). A sign-in problem with no deadline today is normal urgency (KB05). One sign-in problem is handled automatically (KB07)."
+    },
+    {
+      "id": "T03",
+      "type": "normal",
+      "scenario": "model",
+      "input": { "message": "How many people can Meeting Room C hold?" },
+      "expected": { "queue": "general_question", "urgency": "low", "needsHuman": false, "source": "model" },
+      "expectedReview": "handled automatically (needsHuman false)",
+      "reason": "A question about a room is a general question (KB04, KB10) with no time pressure, so low urgency (KB05). One question about the service is handled automatically (KB07)."
+    },
+    {
+      "id": "T04",
+      "type": "edge",
+      "scenario": "model",
+      "input": { "message": "ขอยกเลิกการจองห้องประชุม C วันศุกร์นี้ค่ะ" },
+      "expected": { "queue": "booking_change", "urgency": "normal", "needsHuman": false, "source": "model" },
+      "expectedReview": "handled automatically (needsHuman false)",
+      "reason": "Thai for \"Please cancel my Meeting Room C booking this Friday\". Cancelling is a booking change (KB01); Friday is not within 4 hours, so normal urgency (KB05); one clear booking change is handled automatically (KB07). Edge case: the message is in Thai."
+    },
+    {
+      "id": "T05",
+      "type": "edge",
+      "scenario": "model",
+      "input": { "message": "projector broken" },
+      "expected": { "queue": "equipment_fault", "urgency": "normal", "needsHuman": false, "source": "model" },
+      "expectedReview": "handled automatically (needsHuman false)",
+      "reason": "A broken projector is an equipment fault (KB02); no time is mentioned, so normal urgency (KB02, KB05); one fault report is handled automatically (KB07). Edge case: two words, no detail and no context."
+    },
+    {
+      "id": "T06",
+      "type": "edge",
+      "scenario": "model",
+      "input": { "message": "the camra in medai lab wont turn on, i need it tmrw morning for a shoot" },
+      "expected": { "queue": "equipment_fault", "urgency": "normal", "needsHuman": false, "source": "model" },
+      "expectedReview": "handled automatically (needsHuman false)",
+      "reason": "A camera that will not turn on is an equipment fault (KB02). It is needed tomorrow, not within 4 hours, so the urgency is normal (KB02, KB05). One fault report is handled automatically (KB07). Edge case: misspellings and abbreviations."
+    },
+    {
+      "id": "T07",
+      "type": "fallback",
+      "scenario": "model_error",
+      "input": {
+        "message": "The projector in Building 1 doesn't work and my lecture starts in 20 minutes.",
+        "context": { "equipmentId": "eq-1" }
+      },
+      "expected": { "queue": "equipment_fault", "urgency": "high", "needsHuman": true, "source": "fallback", "fallbackReason": "model_error" },
+      "expectedReview": "fallback decision (model_error), always flagged for a person",
+      "reason": "The model call fails, so the deterministic keyword rules decide: \"doesn't work\" is a fault keyword and \"minutes\" an urgency word, giving equipment_fault with high urgency. Every fallback decision needs a person."
+    },
+    {
+      "id": "T08",
+      "type": "fallback",
+      "scenario": "model_timeout",
+      "input": { "message": "My account is locked and I can't log in." },
+      "expected": { "queue": "access_or_account", "urgency": "normal", "needsHuman": true, "source": "fallback", "fallbackReason": "model_timeout" },
+      "expectedReview": "fallback decision (model_timeout), always flagged for a person",
+      "reason": "The model does not answer in time, so the keyword rules decide: \"account\" and \"log in\" are access keywords and no urgency word appears, giving access_or_account with normal urgency. Every fallback decision needs a person."
+    },
+    {
+      "id": "T09",
+      "type": "difficult",
+      "scenario": "model",
+      "input": {
+        "message": "I was charged a late-return fine for Camera B, but I returned it on time. Please remove the fine.",
+        "context": { "equipmentId": "eq-2" }
+      },
+      "expected": { "queue": "booking_change", "urgency": "normal", "needsHuman": true, "source": "model" },
+      "expectedReview": "a person must read it (needsHuman true)",
+      "reason": "A dispute about a fine for a booking goes to booking_change with normal urgency, and it involves money, so a person must read it (KB01, KB09, KB07). Difficult: the message mentions equipment and a fee, and without the guidelines it could look like a general question or an equipment issue."
+    },
+    {
+      "id": "T10",
+      "type": "difficult",
+      "scenario": "model",
+      "input": { "message": "Can you book a bus to take my class to the science museum tomorrow?" },
+      "expected": { "queue": "general_question", "urgency": "low", "needsHuman": true, "source": "model" },
+      "expectedReview": "a person must read it (needsHuman true)",
+      "reason": "Transport is a service this platform does not provide: general_question with low urgency, and a person replies with the right office (KB04, KB05, KB07). Difficult: the word \"book\" and the deadline \"tomorrow\" suggest a booking change with normal urgency."
+    }
+  ]
+}

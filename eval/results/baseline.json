@@ -1,0 +1,2585 @@
+{
+  "variant": "baseline",
+  "grounding": "off",
+  "runAt": "2026-10-26T15:11:55.476Z",
+  "repetitions": 5,
+  "servers": {
+    "model": "http://localhost:8787/api",
+    "model_error": "http://localhost:8789/api",
+    "model_timeout": "http://localhost:8790/api"
+  },
+  "dataset": {
+    "path": "eval/eval-cases.json",
+    "sha256": "6d512372deb78b453897e35abcb374dfb3830a0ffad2476d5c5c97c4e22045b5"
+  },
+  "knowledgeBase": {
+    "path": "src/knowledge-base.json",
+    "sha256": "fc202fe529f2d447c7122155de9068423133e7a71438d04299b70890be52355b"
+  },
+  "pricing": {
+    "usdPerMillionInputTokens": 0.24,
+    "neuronsPerMillionInputTokens": 21818,
+    "source": "https://developers.cloudflare.com/workers-ai/models/clef/"
+  },
+  "warmups": [
+    {
+      "scenario": "model",
+      "status": 200,
+      "clientMs": 1343.1
+    },
+    {
+      "scenario": "model_error",
+      "status": 200,
+      "clientMs": 919.5
+    },
+    {
+      "scenario": "model_timeout",
+      "status": 200,
+      "clientMs": 247.8
+    }
+  ],
+  "metrics": {
+    "cases": 10,
+    "correctCases": 5,
+    "accuracyPercent": 50,
+    "queueAgreement": 9,
+    "urgencyAgreement": 5,
+    "needsHumanAgreement": 10,
+    "allRepetitionsConsistent": true,
+    "requests": 50,
+    "clientMs": {
+      "p50": 626.3,
+      "p95": 937.8,
+      "max": 1604.5,
+      "mean": 619.064
+    },
+    "modelClientMs": {
+      "requests": 40,
+      "p50": 645.3,
+      "p95": 937.8,
+      "max": 1604.5
+    },
+    "modelWorkerMs": {
+      "p50": 420,
+      "p95": 724
+    },
+    "inputTokensPerModelTask": {
+      "mean": 509.125,
+      "min": 495,
+      "max": 521
+    },
+    "estimatedUsdPerModelTask": 0.00012219,
+    "estimatedNeuronsPerModelTask": 11.10808925
+  },
+  "cases": [
+    {
+      "id": "T01",
+      "type": "normal",
+      "scenario": "model",
+      "input": {
+        "message": "Please move my Projector A booking from Thursday 10:00 to Friday at the same time.",
+        "context": {
+          "equipmentId": "eq-1"
+        }
+      },
+      "expected": {
+        "queue": "booking_change",
+        "urgency": "normal",
+        "needsHuman": false,
+        "source": "model"
+      },
+      "correct": true,
+      "consistent": true,
+      "diffs": [],
+      "actual": {
+        "queue": "booking_change",
+        "urgency": "normal",
+        "needsHuman": false,
+        "source": "model",
+        "fallbackReason": null,
+        "confidence": 0.9809
+      },
+      "contextRecords": [],
+      "inputTokens": 520,
+      "clientMs": [
+        1604.5,
+        809.5,
+        461.4,
+        600.1,
+        639.8
+      ],
+      "workerMs": [
+        1385,
+        580,
+        240,
+        366,
+        420
+      ]
+    },
+    {
+      "id": "T02",
+      "type": "normal",
+      "scenario": "model",
+      "input": {
+        "message": "I forgot my password and can't sign in to the booking system."
+      },
+      "expected": {
+        "queue": "access_or_account",
+        "urgency": "normal",
+        "needsHuman": false,
+        "source": "model"
+      },
+      "correct": false,
+      "consistent": true,
+      "diffs": [
+        "urgency: expected normal, got high"
+      ],
+      "actual": {
+        "queue": "access_or_account",
+        "urgency": "high",
+        "needsHuman": false,
+        "source": "model",
+        "fallbackReason": null,
+        "confidence": 0.9436
+      },
+      "contextRecords": [],
+      "inputTokens": 505,
+      "clientMs": [
+        728.7,
+        556.1,
+        645.3,
+        566.4,
+        661
+      ],
+      "workerMs": [
+        521,
+        332,
+        419,
+        350,
+        433
+      ]
+    },
+    {
+      "id": "T03",
+      "type": "normal",
+      "scenario": "model",
+      "input": {
+        "message": "How many people can Meeting Room C hold?"
+      },
+      "expected": {
+        "queue": "general_question",
+        "urgency": "low",
+        "needsHuman": false,
+        "source": "model"
+      },
+      "correct": true,
+      "consistent": true,
+      "diffs": [],
+      "actual": {
+        "queue": "general_question",
+        "urgency": "low",
+        "needsHuman": false,
+        "source": "model",
+        "fallbackReason": null,
+        "confidence": 0.86
+      },
+      "contextRecords": [],
+      "inputTokens": 501,
+      "clientMs": [
+        525.5,
+        662.8,
+        828.2,
+        649.1,
+        855.8
+      ],
+      "workerMs": [
+        316,
+        443,
+        606,
+        431,
+        645
+      ]
+    },
+    {
+      "id": "T04",
+      "type": "edge",
+      "scenario": "model",
+      "input": {
+        "message": "ขอยกเลิกการจองห้องประชุม C วันศุกร์นี้ค่ะ"
+      },
+      "expected": {
+        "queue": "booking_change",
+        "urgency": "normal",
+        "needsHuman": false,
+        "source": "model"
+      },
+      "correct": true,
+      "consistent": true,
+      "diffs": [],
+      "actual": {
+        "queue": "booking_change",
+        "urgency": "normal",
+        "needsHuman": false,
+        "source": "model",
+        "fallbackReason": null,
+        "confidence": 0.9763
+      },
+      "contextRecords": [],
+      "inputTokens": 512,
+      "clientMs": [
+        656.1,
+        797.2,
+        611.1,
+        937.8,
+        701.2
+      ],
+      "workerMs": [
+        420,
+        579,
+        386,
+        724,
+        464
+      ]
+    },
+    {
+      "id": "T05",
+      "type": "edge",
+      "scenario": "model",
+      "input": {
+        "message": "projector broken"
+      },
+      "expected": {
+        "queue": "equipment_fault",
+        "urgency": "normal",
+        "needsHuman": false,
+        "source": "model"
+      },
+      "correct": false,
+      "consistent": true,
+      "diffs": [
+        "urgency: expected normal, got low"
+      ],
+      "actual": {
+        "queue": "equipment_fault",
+        "urgency": "low",
+        "needsHuman": false,
+        "source": "model",
+        "fallbackReason": null,
+        "confidence": 0.9706
+      },
+      "contextRecords": [],
+      "inputTokens": 495,
+      "clientMs": [
+        617.2,
+        638.1,
+        552.6,
+        626.3,
+        775.4
+      ],
+      "workerMs": [
+        389,
+        420,
+        334,
+        413,
+        558
+      ]
+    },
+    {
+      "id": "T06",
+      "type": "edge",
+      "scenario": "model",
+      "input": {
+        "message": "the camra in medai lab wont turn on, i need it tmrw morning for a shoot"
+      },
+      "expected": {
+        "queue": "equipment_fault",
+        "urgency": "normal",
+        "needsHuman": false,
+        "source": "model"
+      },
+      "correct": false,
+      "consistent": true,
+      "diffs": [
+        "urgency: expected normal, got high"
+      ],
+      "actual": {
+        "queue": "equipment_fault",
+        "urgency": "high",
+        "needsHuman": false,
+        "source": "model",
+        "fallbackReason": null,
+        "confidence": 0.9521
+      },
+      "contextRecords": [],
+      "inputTokens": 512,
+      "clientMs": [
+        661.7,
+        716.2,
+        698.5,
+        637.5,
+        632.5
+      ],
+      "workerMs": [
+        437,
+        508,
+        481,
+        416,
+        418
+      ]
+    },
+    {
+      "id": "T07",
+      "type": "fallback",
+      "scenario": "model_error",
+      "input": {
+        "message": "The projector in Building 1 doesn't work and my lecture starts in 20 minutes.",
+        "context": {
+          "equipmentId": "eq-1"
+        }
+      },
+      "expected": {
+        "queue": "equipment_fault",
+        "urgency": "high",
+        "needsHuman": true,
+        "source": "fallback",
+        "fallbackReason": "model_error"
+      },
+      "correct": true,
+      "consistent": true,
+      "diffs": [],
+      "actual": {
+        "queue": "equipment_fault",
+        "urgency": "high",
+        "needsHuman": true,
+        "source": "fallback",
+        "fallbackReason": "model_error",
+        "confidence": 0
+      },
+      "contextRecords": [],
+      "inputTokens": null,
+      "clientMs": [
+        376.7,
+        350.3,
+        336.1,
+        362.3,
+        394
+      ],
+      "workerMs": [
+        149,
+        124,
+        114,
+        139,
+        155
+      ]
+    },
+    {
+      "id": "T08",
+      "type": "fallback",
+      "scenario": "model_timeout",
+      "input": {
+        "message": "My account is locked and I can't log in."
+      },
+      "expected": {
+        "queue": "access_or_account",
+        "urgency": "normal",
+        "needsHuman": true,
+        "source": "fallback",
+        "fallbackReason": "model_timeout"
+      },
+      "correct": true,
+      "consistent": true,
+      "diffs": [],
+      "actual": {
+        "queue": "access_or_account",
+        "urgency": "normal",
+        "needsHuman": true,
+        "source": "fallback",
+        "fallbackReason": "model_timeout",
+        "confidence": 0
+      },
+      "contextRecords": [],
+      "inputTokens": null,
+      "clientMs": [
+        213.9,
+        218.4,
+        236.5,
+        232.7,
+        223.6
+      ],
+      "workerMs": [
+        2,
+        3,
+        3,
+        2,
+        3
+      ]
+    },
+    {
+      "id": "T09",
+      "type": "difficult",
+      "scenario": "model",
+      "input": {
+        "message": "I was charged a late-return fine for Camera B, but I returned it on time. Please remove the fine.",
+        "context": {
+          "equipmentId": "eq-2"
+        }
+      },
+      "expected": {
+        "queue": "booking_change",
+        "urgency": "normal",
+        "needsHuman": true,
+        "source": "model"
+      },
+      "correct": false,
+      "consistent": true,
+      "diffs": [
+        "queue: expected booking_change, got general_question",
+        "urgency: expected normal, got low"
+      ],
+      "actual": {
+        "queue": "general_question",
+        "urgency": "low",
+        "needsHuman": true,
+        "source": "model",
+        "fallbackReason": null,
+        "confidence": 0.2634
+      },
+      "contextRecords": [],
+      "inputTokens": 521,
+      "clientMs": [
+        526.3,
+        901.8,
+        672,
+        546.9,
+        618.9
+      ],
+      "workerMs": [
+        308,
+        690,
+        462,
+        327,
+        396
+      ]
+    },
+    {
+      "id": "T10",
+      "type": "difficult",
+      "scenario": "model",
+      "input": {
+        "message": "Can you book a bus to take my class to the science museum tomorrow?"
+      },
+      "expected": {
+        "queue": "general_question",
+        "urgency": "low",
+        "needsHuman": true,
+        "source": "model"
+      },
+      "correct": false,
+      "consistent": true,
+      "diffs": [
+        "urgency: expected low, got normal"
+      ],
+      "actual": {
+        "queue": "general_question",
+        "urgency": "normal",
+        "needsHuman": true,
+        "source": "model",
+        "fallbackReason": null,
+        "confidence": 0.2382
+      },
+      "contextRecords": [],
+      "inputTokens": 507,
+      "clientMs": [
+        902.2,
+        578.5,
+        611.3,
+        1105,
+        492.2
+      ],
+      "workerMs": [
+        679,
+        352,
+        389,
+        887,
+        283
+      ]
+    }
+  ],
+  "runs": [
+    {
+      "id": "T01",
+      "rep": 1,
+      "clientMs": 1604.5,
+      "workerMs": 1385,
+      "inputTokens": 520,
+      "contextRecords": [],
+      "correct": true,
+      "diffs": [],
+      "decision": {
+        "queue": "booking_change",
+        "urgency": "normal",
+        "needsHuman": false,
+        "confidence": 0.9809,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.9928,
+            "equipment_fault": 0.0019,
+            "access_or_account": 0.0025,
+            "general_question": 0.0028
+          },
+          "urgencyScore": 0.6857,
+          "urgencyProbabilities": {
+            "low": 0.3464,
+            "normal": 0.6214,
+            "high": 0.0322
+          },
+          "needsHumanProbability": 0.0569,
+          "reasons": [],
+          "latencyMs": 1385,
+          "inputTokens": 520,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T02",
+      "rep": 1,
+      "clientMs": 728.7,
+      "workerMs": 521,
+      "inputTokens": 505,
+      "contextRecords": [],
+      "correct": false,
+      "diffs": [
+        "urgency: expected normal, got high"
+      ],
+      "decision": {
+        "queue": "access_or_account",
+        "urgency": "high",
+        "needsHuman": false,
+        "confidence": 0.9436,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.0074,
+            "equipment_fault": 0.0056,
+            "access_or_account": 0.9785,
+            "general_question": 0.0085
+          },
+          "urgencyScore": 1.1355,
+          "urgencyProbabilities": {
+            "low": 0.2447,
+            "normal": 0.3751,
+            "high": 0.3802
+          },
+          "needsHumanProbability": 0.2369,
+          "reasons": [],
+          "latencyMs": 521,
+          "inputTokens": 505,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T03",
+      "rep": 1,
+      "clientMs": 525.5,
+      "workerMs": 316,
+      "inputTokens": 501,
+      "contextRecords": [],
+      "correct": true,
+      "diffs": [],
+      "decision": {
+        "queue": "general_question",
+        "urgency": "low",
+        "needsHuman": false,
+        "confidence": 0.86,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.0311,
+            "equipment_fault": 0.014,
+            "access_or_account": 0.0095,
+            "general_question": 0.9454
+          },
+          "urgencyScore": 0.0804,
+          "urgencyProbabilities": {
+            "low": 0.9312,
+            "normal": 0.0572,
+            "high": 0.0116
+          },
+          "needsHumanProbability": 0.0353,
+          "reasons": [],
+          "latencyMs": 316,
+          "inputTokens": 501,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T04",
+      "rep": 1,
+      "clientMs": 656.1,
+      "workerMs": 420,
+      "inputTokens": 512,
+      "contextRecords": [],
+      "correct": true,
+      "diffs": [],
+      "decision": {
+        "queue": "booking_change",
+        "urgency": "normal",
+        "needsHuman": false,
+        "confidence": 0.9763,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.991,
+            "equipment_fault": 0.0025,
+            "access_or_account": 0.0029,
+            "general_question": 0.0036
+          },
+          "urgencyScore": 1.0103,
+          "urgencyProbabilities": {
+            "low": 0.1069,
+            "normal": 0.7759,
+            "high": 0.1172
+          },
+          "needsHumanProbability": 0.0522,
+          "reasons": [],
+          "latencyMs": 420,
+          "inputTokens": 512,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T05",
+      "rep": 1,
+      "clientMs": 617.2,
+      "workerMs": 389,
+      "inputTokens": 495,
+      "contextRecords": [],
+      "correct": false,
+      "diffs": [
+        "urgency: expected normal, got low"
+      ],
+      "decision": {
+        "queue": "equipment_fault",
+        "urgency": "low",
+        "needsHuman": false,
+        "confidence": 0.9706,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.0036,
+            "equipment_fault": 0.9889,
+            "access_or_account": 0.0028,
+            "general_question": 0.0047
+          },
+          "urgencyScore": 0.7678,
+          "urgencyProbabilities": {
+            "low": 0.4259,
+            "normal": 0.3805,
+            "high": 0.1936
+          },
+          "needsHumanProbability": 0.1518,
+          "reasons": [],
+          "latencyMs": 389,
+          "inputTokens": 495,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T06",
+      "rep": 1,
+      "clientMs": 661.7,
+      "workerMs": 437,
+      "inputTokens": 512,
+      "contextRecords": [],
+      "correct": false,
+      "diffs": [
+        "urgency: expected normal, got high"
+      ],
+      "decision": {
+        "queue": "equipment_fault",
+        "urgency": "high",
+        "needsHuman": false,
+        "confidence": 0.9521,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.0074,
+            "equipment_fault": 0.9818,
+            "access_or_account": 0.0052,
+            "general_question": 0.0056
+          },
+          "urgencyScore": 1.7194,
+          "urgencyProbabilities": {
+            "low": 0.0323,
+            "normal": 0.216,
+            "high": 0.7517
+          },
+          "needsHumanProbability": 0.3844,
+          "reasons": [],
+          "latencyMs": 437,
+          "inputTokens": 512,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T07",
+      "rep": 1,
+      "clientMs": 376.7,
+      "workerMs": 149,
+      "inputTokens": null,
+      "contextRecords": [],
+      "correct": true,
+      "diffs": [],
+      "decision": {
+        "queue": "equipment_fault",
+        "urgency": "high",
+        "needsHuman": true,
+        "confidence": 0,
+        "source": "fallback",
+        "model": null,
+        "fallbackReason": "model_error",
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0,
+            "equipment_fault": 0,
+            "access_or_account": 0,
+            "general_question": 0
+          },
+          "urgencyScore": 2,
+          "urgencyProbabilities": {
+            "low": 0,
+            "normal": 0,
+            "high": 0
+          },
+          "needsHumanProbability": 1,
+          "reasons": [
+            "the model call failed: AiError: 5007: No such model @cf/cloudflare/no-such-model or task",
+            "keyword rules matched: equipment_fault <- \"doesn't work\"; high urgency <- \"minutes\"",
+            "a fallback decision is always checked by a person"
+          ],
+          "latencyMs": 149,
+          "inputTokens": null,
+          "reportedModel": null,
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T08",
+      "rep": 1,
+      "clientMs": 213.9,
+      "workerMs": 2,
+      "inputTokens": null,
+      "contextRecords": [],
+      "correct": true,
+      "diffs": [],
+      "decision": {
+        "queue": "access_or_account",
+        "urgency": "normal",
+        "needsHuman": true,
+        "confidence": 0,
+        "source": "fallback",
+        "model": null,
+        "fallbackReason": "model_timeout",
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0,
+            "equipment_fault": 0,
+            "access_or_account": 0,
+            "general_question": 0
+          },
+          "urgencyScore": 1,
+          "urgencyProbabilities": {
+            "low": 0,
+            "normal": 0,
+            "high": 0
+          },
+          "needsHumanProbability": 1,
+          "reasons": [
+            "the model gave no answer within 1 ms",
+            "keyword rules matched: access_or_account <- \"log in\"; access_or_account <- \"account\"",
+            "a fallback decision is always checked by a person"
+          ],
+          "latencyMs": 2,
+          "inputTokens": null,
+          "reportedModel": null,
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T09",
+      "rep": 1,
+      "clientMs": 526.3,
+      "workerMs": 308,
+      "inputTokens": 521,
+      "contextRecords": [],
+      "correct": false,
+      "diffs": [
+        "queue: expected booking_change, got general_question",
+        "urgency: expected normal, got low"
+      ],
+      "decision": {
+        "queue": "general_question",
+        "urgency": "low",
+        "needsHuman": true,
+        "confidence": 0.2634,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.2552,
+            "equipment_fault": 0.0814,
+            "access_or_account": 0.0527,
+            "general_question": 0.6107
+          },
+          "urgencyScore": 0.4797,
+          "urgencyProbabilities": {
+            "low": 0.5357,
+            "normal": 0.449,
+            "high": 0.0153
+          },
+          "needsHumanProbability": 0.7828,
+          "reasons": [
+            "the model judged that a person should read this message (probability 0.7828)",
+            "confidence 0.2634 in the queue is below the threshold 0.6"
+          ],
+          "latencyMs": 308,
+          "inputTokens": 521,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T10",
+      "rep": 1,
+      "clientMs": 902.2,
+      "workerMs": 679,
+      "inputTokens": 507,
+      "contextRecords": [],
+      "correct": false,
+      "diffs": [
+        "urgency: expected low, got normal"
+      ],
+      "decision": {
+        "queue": "general_question",
+        "urgency": "normal",
+        "needsHuman": true,
+        "confidence": 0.2382,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.4387,
+            "equipment_fault": 0.0286,
+            "access_or_account": 0.0501,
+            "general_question": 0.4826
+          },
+          "urgencyScore": 1.0798,
+          "urgencyProbabilities": {
+            "low": 0.1742,
+            "normal": 0.5718,
+            "high": 0.254
+          },
+          "needsHumanProbability": 0.5418,
+          "reasons": [
+            "the model judged that a person should read this message (probability 0.5418)",
+            "confidence 0.2382 in the queue is below the threshold 0.6"
+          ],
+          "latencyMs": 679,
+          "inputTokens": 507,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T01",
+      "rep": 2,
+      "clientMs": 809.5,
+      "workerMs": 580,
+      "inputTokens": 520,
+      "contextRecords": [],
+      "correct": true,
+      "diffs": [],
+      "decision": {
+        "queue": "booking_change",
+        "urgency": "normal",
+        "needsHuman": false,
+        "confidence": 0.9809,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.9928,
+            "equipment_fault": 0.0019,
+            "access_or_account": 0.0025,
+            "general_question": 0.0028
+          },
+          "urgencyScore": 0.6857,
+          "urgencyProbabilities": {
+            "low": 0.3464,
+            "normal": 0.6214,
+            "high": 0.0322
+          },
+          "needsHumanProbability": 0.0569,
+          "reasons": [],
+          "latencyMs": 580,
+          "inputTokens": 520,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T02",
+      "rep": 2,
+      "clientMs": 556.1,
+      "workerMs": 332,
+      "inputTokens": 505,
+      "contextRecords": [],
+      "correct": false,
+      "diffs": [
+        "urgency: expected normal, got high"
+      ],
+      "decision": {
+        "queue": "access_or_account",
+        "urgency": "high",
+        "needsHuman": false,
+        "confidence": 0.9436,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.0074,
+            "equipment_fault": 0.0056,
+            "access_or_account": 0.9785,
+            "general_question": 0.0085
+          },
+          "urgencyScore": 1.1355,
+          "urgencyProbabilities": {
+            "low": 0.2447,
+            "normal": 0.3751,
+            "high": 0.3802
+          },
+          "needsHumanProbability": 0.2369,
+          "reasons": [],
+          "latencyMs": 332,
+          "inputTokens": 505,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T03",
+      "rep": 2,
+      "clientMs": 662.8,
+      "workerMs": 443,
+      "inputTokens": 501,
+      "contextRecords": [],
+      "correct": true,
+      "diffs": [],
+      "decision": {
+        "queue": "general_question",
+        "urgency": "low",
+        "needsHuman": false,
+        "confidence": 0.86,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.0311,
+            "equipment_fault": 0.014,
+            "access_or_account": 0.0095,
+            "general_question": 0.9454
+          },
+          "urgencyScore": 0.0804,
+          "urgencyProbabilities": {
+            "low": 0.9312,
+            "normal": 0.0572,
+            "high": 0.0116
+          },
+          "needsHumanProbability": 0.0353,
+          "reasons": [],
+          "latencyMs": 443,
+          "inputTokens": 501,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T04",
+      "rep": 2,
+      "clientMs": 797.2,
+      "workerMs": 579,
+      "inputTokens": 512,
+      "contextRecords": [],
+      "correct": true,
+      "diffs": [],
+      "decision": {
+        "queue": "booking_change",
+        "urgency": "normal",
+        "needsHuman": false,
+        "confidence": 0.9763,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.991,
+            "equipment_fault": 0.0025,
+            "access_or_account": 0.0029,
+            "general_question": 0.0036
+          },
+          "urgencyScore": 1.0103,
+          "urgencyProbabilities": {
+            "low": 0.1069,
+            "normal": 0.7759,
+            "high": 0.1172
+          },
+          "needsHumanProbability": 0.0522,
+          "reasons": [],
+          "latencyMs": 579,
+          "inputTokens": 512,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T05",
+      "rep": 2,
+      "clientMs": 638.1,
+      "workerMs": 420,
+      "inputTokens": 495,
+      "contextRecords": [],
+      "correct": false,
+      "diffs": [
+        "urgency: expected normal, got low"
+      ],
+      "decision": {
+        "queue": "equipment_fault",
+        "urgency": "low",
+        "needsHuman": false,
+        "confidence": 0.9706,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.0036,
+            "equipment_fault": 0.9889,
+            "access_or_account": 0.0028,
+            "general_question": 0.0047
+          },
+          "urgencyScore": 0.7678,
+          "urgencyProbabilities": {
+            "low": 0.4259,
+            "normal": 0.3805,
+            "high": 0.1936
+          },
+          "needsHumanProbability": 0.1518,
+          "reasons": [],
+          "latencyMs": 420,
+          "inputTokens": 495,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T06",
+      "rep": 2,
+      "clientMs": 716.2,
+      "workerMs": 508,
+      "inputTokens": 512,
+      "contextRecords": [],
+      "correct": false,
+      "diffs": [
+        "urgency: expected normal, got high"
+      ],
+      "decision": {
+        "queue": "equipment_fault",
+        "urgency": "high",
+        "needsHuman": false,
+        "confidence": 0.9521,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.0074,
+            "equipment_fault": 0.9818,
+            "access_or_account": 0.0052,
+            "general_question": 0.0056
+          },
+          "urgencyScore": 1.7194,
+          "urgencyProbabilities": {
+            "low": 0.0323,
+            "normal": 0.216,
+            "high": 0.7517
+          },
+          "needsHumanProbability": 0.3844,
+          "reasons": [],
+          "latencyMs": 508,
+          "inputTokens": 512,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T07",
+      "rep": 2,
+      "clientMs": 350.3,
+      "workerMs": 124,
+      "inputTokens": null,
+      "contextRecords": [],
+      "correct": true,
+      "diffs": [],
+      "decision": {
+        "queue": "equipment_fault",
+        "urgency": "high",
+        "needsHuman": true,
+        "confidence": 0,
+        "source": "fallback",
+        "model": null,
+        "fallbackReason": "model_error",
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0,
+            "equipment_fault": 0,
+            "access_or_account": 0,
+            "general_question": 0
+          },
+          "urgencyScore": 2,
+          "urgencyProbabilities": {
+            "low": 0,
+            "normal": 0,
+            "high": 0
+          },
+          "needsHumanProbability": 1,
+          "reasons": [
+            "the model call failed: AiError: 5007: No such model @cf/cloudflare/no-such-model or task",
+            "keyword rules matched: equipment_fault <- \"doesn't work\"; high urgency <- \"minutes\"",
+            "a fallback decision is always checked by a person"
+          ],
+          "latencyMs": 124,
+          "inputTokens": null,
+          "reportedModel": null,
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T08",
+      "rep": 2,
+      "clientMs": 218.4,
+      "workerMs": 3,
+      "inputTokens": null,
+      "contextRecords": [],
+      "correct": true,
+      "diffs": [],
+      "decision": {
+        "queue": "access_or_account",
+        "urgency": "normal",
+        "needsHuman": true,
+        "confidence": 0,
+        "source": "fallback",
+        "model": null,
+        "fallbackReason": "model_timeout",
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0,
+            "equipment_fault": 0,
+            "access_or_account": 0,
+            "general_question": 0
+          },
+          "urgencyScore": 1,
+          "urgencyProbabilities": {
+            "low": 0,
+            "normal": 0,
+            "high": 0
+          },
+          "needsHumanProbability": 1,
+          "reasons": [
+            "the model gave no answer within 1 ms",
+            "keyword rules matched: access_or_account <- \"log in\"; access_or_account <- \"account\"",
+            "a fallback decision is always checked by a person"
+          ],
+          "latencyMs": 3,
+          "inputTokens": null,
+          "reportedModel": null,
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T09",
+      "rep": 2,
+      "clientMs": 901.8,
+      "workerMs": 690,
+      "inputTokens": 521,
+      "contextRecords": [],
+      "correct": false,
+      "diffs": [
+        "queue: expected booking_change, got general_question",
+        "urgency: expected normal, got low"
+      ],
+      "decision": {
+        "queue": "general_question",
+        "urgency": "low",
+        "needsHuman": true,
+        "confidence": 0.2634,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.2552,
+            "equipment_fault": 0.0814,
+            "access_or_account": 0.0527,
+            "general_question": 0.6107
+          },
+          "urgencyScore": 0.4797,
+          "urgencyProbabilities": {
+            "low": 0.5357,
+            "normal": 0.449,
+            "high": 0.0153
+          },
+          "needsHumanProbability": 0.7828,
+          "reasons": [
+            "the model judged that a person should read this message (probability 0.7828)",
+            "confidence 0.2634 in the queue is below the threshold 0.6"
+          ],
+          "latencyMs": 690,
+          "inputTokens": 521,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T10",
+      "rep": 2,
+      "clientMs": 578.5,
+      "workerMs": 352,
+      "inputTokens": 507,
+      "contextRecords": [],
+      "correct": false,
+      "diffs": [
+        "urgency: expected low, got normal"
+      ],
+      "decision": {
+        "queue": "general_question",
+        "urgency": "normal",
+        "needsHuman": true,
+        "confidence": 0.2382,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.4387,
+            "equipment_fault": 0.0286,
+            "access_or_account": 0.0501,
+            "general_question": 0.4826
+          },
+          "urgencyScore": 1.0798,
+          "urgencyProbabilities": {
+            "low": 0.1742,
+            "normal": 0.5718,
+            "high": 0.254
+          },
+          "needsHumanProbability": 0.5418,
+          "reasons": [
+            "the model judged that a person should read this message (probability 0.5418)",
+            "confidence 0.2382 in the queue is below the threshold 0.6"
+          ],
+          "latencyMs": 352,
+          "inputTokens": 507,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T01",
+      "rep": 3,
+      "clientMs": 461.4,
+      "workerMs": 240,
+      "inputTokens": 520,
+      "contextRecords": [],
+      "correct": true,
+      "diffs": [],
+      "decision": {
+        "queue": "booking_change",
+        "urgency": "normal",
+        "needsHuman": false,
+        "confidence": 0.9809,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.9928,
+            "equipment_fault": 0.0019,
+            "access_or_account": 0.0025,
+            "general_question": 0.0028
+          },
+          "urgencyScore": 0.6857,
+          "urgencyProbabilities": {
+            "low": 0.3464,
+            "normal": 0.6214,
+            "high": 0.0322
+          },
+          "needsHumanProbability": 0.0569,
+          "reasons": [],
+          "latencyMs": 240,
+          "inputTokens": 520,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T02",
+      "rep": 3,
+      "clientMs": 645.3,
+      "workerMs": 419,
+      "inputTokens": 505,
+      "contextRecords": [],
+      "correct": false,
+      "diffs": [
+        "urgency: expected normal, got high"
+      ],
+      "decision": {
+        "queue": "access_or_account",
+        "urgency": "high",
+        "needsHuman": false,
+        "confidence": 0.9436,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.0074,
+            "equipment_fault": 0.0056,
+            "access_or_account": 0.9785,
+            "general_question": 0.0085
+          },
+          "urgencyScore": 1.1355,
+          "urgencyProbabilities": {
+            "low": 0.2447,
+            "normal": 0.3751,
+            "high": 0.3802
+          },
+          "needsHumanProbability": 0.2369,
+          "reasons": [],
+          "latencyMs": 419,
+          "inputTokens": 505,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T03",
+      "rep": 3,
+      "clientMs": 828.2,
+      "workerMs": 606,
+      "inputTokens": 501,
+      "contextRecords": [],
+      "correct": true,
+      "diffs": [],
+      "decision": {
+        "queue": "general_question",
+        "urgency": "low",
+        "needsHuman": false,
+        "confidence": 0.86,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.0311,
+            "equipment_fault": 0.014,
+            "access_or_account": 0.0095,
+            "general_question": 0.9454
+          },
+          "urgencyScore": 0.0804,
+          "urgencyProbabilities": {
+            "low": 0.9312,
+            "normal": 0.0572,
+            "high": 0.0116
+          },
+          "needsHumanProbability": 0.0353,
+          "reasons": [],
+          "latencyMs": 606,
+          "inputTokens": 501,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T04",
+      "rep": 3,
+      "clientMs": 611.1,
+      "workerMs": 386,
+      "inputTokens": 512,
+      "contextRecords": [],
+      "correct": true,
+      "diffs": [],
+      "decision": {
+        "queue": "booking_change",
+        "urgency": "normal",
+        "needsHuman": false,
+        "confidence": 0.9763,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.991,
+            "equipment_fault": 0.0025,
+            "access_or_account": 0.0029,
+            "general_question": 0.0036
+          },
+          "urgencyScore": 1.0103,
+          "urgencyProbabilities": {
+            "low": 0.1069,
+            "normal": 0.7759,
+            "high": 0.1172
+          },
+          "needsHumanProbability": 0.0522,
+          "reasons": [],
+          "latencyMs": 386,
+          "inputTokens": 512,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T05",
+      "rep": 3,
+      "clientMs": 552.6,
+      "workerMs": 334,
+      "inputTokens": 495,
+      "contextRecords": [],
+      "correct": false,
+      "diffs": [
+        "urgency: expected normal, got low"
+      ],
+      "decision": {
+        "queue": "equipment_fault",
+        "urgency": "low",
+        "needsHuman": false,
+        "confidence": 0.9706,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.0036,
+            "equipment_fault": 0.9889,
+            "access_or_account": 0.0028,
+            "general_question": 0.0047
+          },
+          "urgencyScore": 0.7678,
+          "urgencyProbabilities": {
+            "low": 0.4259,
+            "normal": 0.3805,
+            "high": 0.1936
+          },
+          "needsHumanProbability": 0.1518,
+          "reasons": [],
+          "latencyMs": 334,
+          "inputTokens": 495,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T06",
+      "rep": 3,
+      "clientMs": 698.5,
+      "workerMs": 481,
+      "inputTokens": 512,
+      "contextRecords": [],
+      "correct": false,
+      "diffs": [
+        "urgency: expected normal, got high"
+      ],
+      "decision": {
+        "queue": "equipment_fault",
+        "urgency": "high",
+        "needsHuman": false,
+        "confidence": 0.9521,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.0074,
+            "equipment_fault": 0.9818,
+            "access_or_account": 0.0052,
+            "general_question": 0.0056
+          },
+          "urgencyScore": 1.7194,
+          "urgencyProbabilities": {
+            "low": 0.0323,
+            "normal": 0.216,
+            "high": 0.7517
+          },
+          "needsHumanProbability": 0.3844,
+          "reasons": [],
+          "latencyMs": 481,
+          "inputTokens": 512,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T07",
+      "rep": 3,
+      "clientMs": 336.1,
+      "workerMs": 114,
+      "inputTokens": null,
+      "contextRecords": [],
+      "correct": true,
+      "diffs": [],
+      "decision": {
+        "queue": "equipment_fault",
+        "urgency": "high",
+        "needsHuman": true,
+        "confidence": 0,
+        "source": "fallback",
+        "model": null,
+        "fallbackReason": "model_error",
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0,
+            "equipment_fault": 0,
+            "access_or_account": 0,
+            "general_question": 0
+          },
+          "urgencyScore": 2,
+          "urgencyProbabilities": {
+            "low": 0,
+            "normal": 0,
+            "high": 0
+          },
+          "needsHumanProbability": 1,
+          "reasons": [
+            "the model call failed: AiError: 5007: No such model @cf/cloudflare/no-such-model or task",
+            "keyword rules matched: equipment_fault <- \"doesn't work\"; high urgency <- \"minutes\"",
+            "a fallback decision is always checked by a person"
+          ],
+          "latencyMs": 114,
+          "inputTokens": null,
+          "reportedModel": null,
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T08",
+      "rep": 3,
+      "clientMs": 236.5,
+      "workerMs": 3,
+      "inputTokens": null,
+      "contextRecords": [],
+      "correct": true,
+      "diffs": [],
+      "decision": {
+        "queue": "access_or_account",
+        "urgency": "normal",
+        "needsHuman": true,
+        "confidence": 0,
+        "source": "fallback",
+        "model": null,
+        "fallbackReason": "model_timeout",
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0,
+            "equipment_fault": 0,
+            "access_or_account": 0,
+            "general_question": 0
+          },
+          "urgencyScore": 1,
+          "urgencyProbabilities": {
+            "low": 0,
+            "normal": 0,
+            "high": 0
+          },
+          "needsHumanProbability": 1,
+          "reasons": [
+            "the model gave no answer within 1 ms",
+            "keyword rules matched: access_or_account <- \"log in\"; access_or_account <- \"account\"",
+            "a fallback decision is always checked by a person"
+          ],
+          "latencyMs": 3,
+          "inputTokens": null,
+          "reportedModel": null,
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T09",
+      "rep": 3,
+      "clientMs": 672,
+      "workerMs": 462,
+      "inputTokens": 521,
+      "contextRecords": [],
+      "correct": false,
+      "diffs": [
+        "queue: expected booking_change, got general_question",
+        "urgency: expected normal, got low"
+      ],
+      "decision": {
+        "queue": "general_question",
+        "urgency": "low",
+        "needsHuman": true,
+        "confidence": 0.2634,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.2552,
+            "equipment_fault": 0.0814,
+            "access_or_account": 0.0527,
+            "general_question": 0.6107
+          },
+          "urgencyScore": 0.4797,
+          "urgencyProbabilities": {
+            "low": 0.5357,
+            "normal": 0.449,
+            "high": 0.0153
+          },
+          "needsHumanProbability": 0.7828,
+          "reasons": [
+            "the model judged that a person should read this message (probability 0.7828)",
+            "confidence 0.2634 in the queue is below the threshold 0.6"
+          ],
+          "latencyMs": 462,
+          "inputTokens": 521,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T10",
+      "rep": 3,
+      "clientMs": 611.3,
+      "workerMs": 389,
+      "inputTokens": 507,
+      "contextRecords": [],
+      "correct": false,
+      "diffs": [
+        "urgency: expected low, got normal"
+      ],
+      "decision": {
+        "queue": "general_question",
+        "urgency": "normal",
+        "needsHuman": true,
+        "confidence": 0.2382,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.4387,
+            "equipment_fault": 0.0286,
+            "access_or_account": 0.0501,
+            "general_question": 0.4826
+          },
+          "urgencyScore": 1.0798,
+          "urgencyProbabilities": {
+            "low": 0.1742,
+            "normal": 0.5718,
+            "high": 0.254
+          },
+          "needsHumanProbability": 0.5418,
+          "reasons": [
+            "the model judged that a person should read this message (probability 0.5418)",
+            "confidence 0.2382 in the queue is below the threshold 0.6"
+          ],
+          "latencyMs": 389,
+          "inputTokens": 507,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T01",
+      "rep": 4,
+      "clientMs": 600.1,
+      "workerMs": 366,
+      "inputTokens": 520,
+      "contextRecords": [],
+      "correct": true,
+      "diffs": [],
+      "decision": {
+        "queue": "booking_change",
+        "urgency": "normal",
+        "needsHuman": false,
+        "confidence": 0.9809,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.9928,
+            "equipment_fault": 0.0019,
+            "access_or_account": 0.0025,
+            "general_question": 0.0028
+          },
+          "urgencyScore": 0.6857,
+          "urgencyProbabilities": {
+            "low": 0.3464,
+            "normal": 0.6214,
+            "high": 0.0322
+          },
+          "needsHumanProbability": 0.0569,
+          "reasons": [],
+          "latencyMs": 366,
+          "inputTokens": 520,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T02",
+      "rep": 4,
+      "clientMs": 566.4,
+      "workerMs": 350,
+      "inputTokens": 505,
+      "contextRecords": [],
+      "correct": false,
+      "diffs": [
+        "urgency: expected normal, got high"
+      ],
+      "decision": {
+        "queue": "access_or_account",
+        "urgency": "high",
+        "needsHuman": false,
+        "confidence": 0.9436,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.0074,
+            "equipment_fault": 0.0056,
+            "access_or_account": 0.9785,
+            "general_question": 0.0085
+          },
+          "urgencyScore": 1.1355,
+          "urgencyProbabilities": {
+            "low": 0.2447,
+            "normal": 0.3751,
+            "high": 0.3802
+          },
+          "needsHumanProbability": 0.2369,
+          "reasons": [],
+          "latencyMs": 350,
+          "inputTokens": 505,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T03",
+      "rep": 4,
+      "clientMs": 649.1,
+      "workerMs": 431,
+      "inputTokens": 501,
+      "contextRecords": [],
+      "correct": true,
+      "diffs": [],
+      "decision": {
+        "queue": "general_question",
+        "urgency": "low",
+        "needsHuman": false,
+        "confidence": 0.86,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.0311,
+            "equipment_fault": 0.014,
+            "access_or_account": 0.0095,
+            "general_question": 0.9454
+          },
+          "urgencyScore": 0.0804,
+          "urgencyProbabilities": {
+            "low": 0.9312,
+            "normal": 0.0572,
+            "high": 0.0116
+          },
+          "needsHumanProbability": 0.0353,
+          "reasons": [],
+          "latencyMs": 431,
+          "inputTokens": 501,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T04",
+      "rep": 4,
+      "clientMs": 937.8,
+      "workerMs": 724,
+      "inputTokens": 512,
+      "contextRecords": [],
+      "correct": true,
+      "diffs": [],
+      "decision": {
+        "queue": "booking_change",
+        "urgency": "normal",
+        "needsHuman": false,
+        "confidence": 0.9763,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.991,
+            "equipment_fault": 0.0025,
+            "access_or_account": 0.0029,
+            "general_question": 0.0036
+          },
+          "urgencyScore": 1.0103,
+          "urgencyProbabilities": {
+            "low": 0.1069,
+            "normal": 0.7759,
+            "high": 0.1172
+          },
+          "needsHumanProbability": 0.0522,
+          "reasons": [],
+          "latencyMs": 724,
+          "inputTokens": 512,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T05",
+      "rep": 4,
+      "clientMs": 626.3,
+      "workerMs": 413,
+      "inputTokens": 495,
+      "contextRecords": [],
+      "correct": false,
+      "diffs": [
+        "urgency: expected normal, got low"
+      ],
+      "decision": {
+        "queue": "equipment_fault",
+        "urgency": "low",
+        "needsHuman": false,
+        "confidence": 0.9706,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.0036,
+            "equipment_fault": 0.9889,
+            "access_or_account": 0.0028,
+            "general_question": 0.0047
+          },
+          "urgencyScore": 0.7678,
+          "urgencyProbabilities": {
+            "low": 0.4259,
+            "normal": 0.3805,
+            "high": 0.1936
+          },
+          "needsHumanProbability": 0.1518,
+          "reasons": [],
+          "latencyMs": 413,
+          "inputTokens": 495,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T06",
+      "rep": 4,
+      "clientMs": 637.5,
+      "workerMs": 416,
+      "inputTokens": 512,
+      "contextRecords": [],
+      "correct": false,
+      "diffs": [
+        "urgency: expected normal, got high"
+      ],
+      "decision": {
+        "queue": "equipment_fault",
+        "urgency": "high",
+        "needsHuman": false,
+        "confidence": 0.9521,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.0074,
+            "equipment_fault": 0.9818,
+            "access_or_account": 0.0052,
+            "general_question": 0.0056
+          },
+          "urgencyScore": 1.7194,
+          "urgencyProbabilities": {
+            "low": 0.0323,
+            "normal": 0.216,
+            "high": 0.7517
+          },
+          "needsHumanProbability": 0.3844,
+          "reasons": [],
+          "latencyMs": 416,
+          "inputTokens": 512,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T07",
+      "rep": 4,
+      "clientMs": 362.3,
+      "workerMs": 139,
+      "inputTokens": null,
+      "contextRecords": [],
+      "correct": true,
+      "diffs": [],
+      "decision": {
+        "queue": "equipment_fault",
+        "urgency": "high",
+        "needsHuman": true,
+        "confidence": 0,
+        "source": "fallback",
+        "model": null,
+        "fallbackReason": "model_error",
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0,
+            "equipment_fault": 0,
+            "access_or_account": 0,
+            "general_question": 0
+          },
+          "urgencyScore": 2,
+          "urgencyProbabilities": {
+            "low": 0,
+            "normal": 0,
+            "high": 0
+          },
+          "needsHumanProbability": 1,
+          "reasons": [
+            "the model call failed: AiError: 5007: No such model @cf/cloudflare/no-such-model or task",
+            "keyword rules matched: equipment_fault <- \"doesn't work\"; high urgency <- \"minutes\"",
+            "a fallback decision is always checked by a person"
+          ],
+          "latencyMs": 139,
+          "inputTokens": null,
+          "reportedModel": null,
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T08",
+      "rep": 4,
+      "clientMs": 232.7,
+      "workerMs": 2,
+      "inputTokens": null,
+      "contextRecords": [],
+      "correct": true,
+      "diffs": [],
+      "decision": {
+        "queue": "access_or_account",
+        "urgency": "normal",
+        "needsHuman": true,
+        "confidence": 0,
+        "source": "fallback",
+        "model": null,
+        "fallbackReason": "model_timeout",
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0,
+            "equipment_fault": 0,
+            "access_or_account": 0,
+            "general_question": 0
+          },
+          "urgencyScore": 1,
+          "urgencyProbabilities": {
+            "low": 0,
+            "normal": 0,
+            "high": 0
+          },
+          "needsHumanProbability": 1,
+          "reasons": [
+            "the model gave no answer within 1 ms",
+            "keyword rules matched: access_or_account <- \"log in\"; access_or_account <- \"account\"",
+            "a fallback decision is always checked by a person"
+          ],
+          "latencyMs": 2,
+          "inputTokens": null,
+          "reportedModel": null,
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T09",
+      "rep": 4,
+      "clientMs": 546.9,
+      "workerMs": 327,
+      "inputTokens": 521,
+      "contextRecords": [],
+      "correct": false,
+      "diffs": [
+        "queue: expected booking_change, got general_question",
+        "urgency: expected normal, got low"
+      ],
+      "decision": {
+        "queue": "general_question",
+        "urgency": "low",
+        "needsHuman": true,
+        "confidence": 0.2634,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.2552,
+            "equipment_fault": 0.0814,
+            "access_or_account": 0.0527,
+            "general_question": 0.6107
+          },
+          "urgencyScore": 0.4797,
+          "urgencyProbabilities": {
+            "low": 0.5357,
+            "normal": 0.449,
+            "high": 0.0153
+          },
+          "needsHumanProbability": 0.7828,
+          "reasons": [
+            "the model judged that a person should read this message (probability 0.7828)",
+            "confidence 0.2634 in the queue is below the threshold 0.6"
+          ],
+          "latencyMs": 327,
+          "inputTokens": 521,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T10",
+      "rep": 4,
+      "clientMs": 1105,
+      "workerMs": 887,
+      "inputTokens": 507,
+      "contextRecords": [],
+      "correct": false,
+      "diffs": [
+        "urgency: expected low, got normal"
+      ],
+      "decision": {
+        "queue": "general_question",
+        "urgency": "normal",
+        "needsHuman": true,
+        "confidence": 0.2382,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.4387,
+            "equipment_fault": 0.0286,
+            "access_or_account": 0.0501,
+            "general_question": 0.4826
+          },
+          "urgencyScore": 1.0798,
+          "urgencyProbabilities": {
+            "low": 0.1742,
+            "normal": 0.5718,
+            "high": 0.254
+          },
+          "needsHumanProbability": 0.5418,
+          "reasons": [
+            "the model judged that a person should read this message (probability 0.5418)",
+            "confidence 0.2382 in the queue is below the threshold 0.6"
+          ],
+          "latencyMs": 887,
+          "inputTokens": 507,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T01",
+      "rep": 5,
+      "clientMs": 639.8,
+      "workerMs": 420,
+      "inputTokens": 520,
+      "contextRecords": [],
+      "correct": true,
+      "diffs": [],
+      "decision": {
+        "queue": "booking_change",
+        "urgency": "normal",
+        "needsHuman": false,
+        "confidence": 0.9809,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.9928,
+            "equipment_fault": 0.0019,
+            "access_or_account": 0.0025,
+            "general_question": 0.0028
+          },
+          "urgencyScore": 0.6857,
+          "urgencyProbabilities": {
+            "low": 0.3464,
+            "normal": 0.6214,
+            "high": 0.0322
+          },
+          "needsHumanProbability": 0.0569,
+          "reasons": [],
+          "latencyMs": 420,
+          "inputTokens": 520,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T02",
+      "rep": 5,
+      "clientMs": 661,
+      "workerMs": 433,
+      "inputTokens": 505,
+      "contextRecords": [],
+      "correct": false,
+      "diffs": [
+        "urgency: expected normal, got high"
+      ],
+      "decision": {
+        "queue": "access_or_account",
+        "urgency": "high",
+        "needsHuman": false,
+        "confidence": 0.9436,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.0074,
+            "equipment_fault": 0.0056,
+            "access_or_account": 0.9785,
+            "general_question": 0.0085
+          },
+          "urgencyScore": 1.1355,
+          "urgencyProbabilities": {
+            "low": 0.2447,
+            "normal": 0.3751,
+            "high": 0.3802
+          },
+          "needsHumanProbability": 0.2369,
+          "reasons": [],
+          "latencyMs": 433,
+          "inputTokens": 505,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T03",
+      "rep": 5,
+      "clientMs": 855.8,
+      "workerMs": 645,
+      "inputTokens": 501,
+      "contextRecords": [],
+      "correct": true,
+      "diffs": [],
+      "decision": {
+        "queue": "general_question",
+        "urgency": "low",
+        "needsHuman": false,
+        "confidence": 0.86,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.0311,
+            "equipment_fault": 0.014,
+            "access_or_account": 0.0095,
+            "general_question": 0.9454
+          },
+          "urgencyScore": 0.0804,
+          "urgencyProbabilities": {
+            "low": 0.9312,
+            "normal": 0.0572,
+            "high": 0.0116
+          },
+          "needsHumanProbability": 0.0353,
+          "reasons": [],
+          "latencyMs": 645,
+          "inputTokens": 501,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T04",
+      "rep": 5,
+      "clientMs": 701.2,
+      "workerMs": 464,
+      "inputTokens": 512,
+      "contextRecords": [],
+      "correct": true,
+      "diffs": [],
+      "decision": {
+        "queue": "booking_change",
+        "urgency": "normal",
+        "needsHuman": false,
+        "confidence": 0.9763,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.991,
+            "equipment_fault": 0.0025,
+            "access_or_account": 0.0029,
+            "general_question": 0.0036
+          },
+          "urgencyScore": 1.0103,
+          "urgencyProbabilities": {
+            "low": 0.1069,
+            "normal": 0.7759,
+            "high": 0.1172
+          },
+          "needsHumanProbability": 0.0522,
+          "reasons": [],
+          "latencyMs": 464,
+          "inputTokens": 512,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T05",
+      "rep": 5,
+      "clientMs": 775.4,
+      "workerMs": 558,
+      "inputTokens": 495,
+      "contextRecords": [],
+      "correct": false,
+      "diffs": [
+        "urgency: expected normal, got low"
+      ],
+      "decision": {
+        "queue": "equipment_fault",
+        "urgency": "low",
+        "needsHuman": false,
+        "confidence": 0.9706,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.0036,
+            "equipment_fault": 0.9889,
+            "access_or_account": 0.0028,
+            "general_question": 0.0047
+          },
+          "urgencyScore": 0.7678,
+          "urgencyProbabilities": {
+            "low": 0.4259,
+            "normal": 0.3805,
+            "high": 0.1936
+          },
+          "needsHumanProbability": 0.1518,
+          "reasons": [],
+          "latencyMs": 558,
+          "inputTokens": 495,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T06",
+      "rep": 5,
+      "clientMs": 632.5,
+      "workerMs": 418,
+      "inputTokens": 512,
+      "contextRecords": [],
+      "correct": false,
+      "diffs": [
+        "urgency: expected normal, got high"
+      ],
+      "decision": {
+        "queue": "equipment_fault",
+        "urgency": "high",
+        "needsHuman": false,
+        "confidence": 0.9521,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.0074,
+            "equipment_fault": 0.9818,
+            "access_or_account": 0.0052,
+            "general_question": 0.0056
+          },
+          "urgencyScore": 1.7194,
+          "urgencyProbabilities": {
+            "low": 0.0323,
+            "normal": 0.216,
+            "high": 0.7517
+          },
+          "needsHumanProbability": 0.3844,
+          "reasons": [],
+          "latencyMs": 418,
+          "inputTokens": 512,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T07",
+      "rep": 5,
+      "clientMs": 394,
+      "workerMs": 155,
+      "inputTokens": null,
+      "contextRecords": [],
+      "correct": true,
+      "diffs": [],
+      "decision": {
+        "queue": "equipment_fault",
+        "urgency": "high",
+        "needsHuman": true,
+        "confidence": 0,
+        "source": "fallback",
+        "model": null,
+        "fallbackReason": "model_error",
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0,
+            "equipment_fault": 0,
+            "access_or_account": 0,
+            "general_question": 0
+          },
+          "urgencyScore": 2,
+          "urgencyProbabilities": {
+            "low": 0,
+            "normal": 0,
+            "high": 0
+          },
+          "needsHumanProbability": 1,
+          "reasons": [
+            "the model call failed: AiError: 5007: No such model @cf/cloudflare/no-such-model or task",
+            "keyword rules matched: equipment_fault <- \"doesn't work\"; high urgency <- \"minutes\"",
+            "a fallback decision is always checked by a person"
+          ],
+          "latencyMs": 155,
+          "inputTokens": null,
+          "reportedModel": null,
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T08",
+      "rep": 5,
+      "clientMs": 223.6,
+      "workerMs": 3,
+      "inputTokens": null,
+      "contextRecords": [],
+      "correct": true,
+      "diffs": [],
+      "decision": {
+        "queue": "access_or_account",
+        "urgency": "normal",
+        "needsHuman": true,
+        "confidence": 0,
+        "source": "fallback",
+        "model": null,
+        "fallbackReason": "model_timeout",
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0,
+            "equipment_fault": 0,
+            "access_or_account": 0,
+            "general_question": 0
+          },
+          "urgencyScore": 1,
+          "urgencyProbabilities": {
+            "low": 0,
+            "normal": 0,
+            "high": 0
+          },
+          "needsHumanProbability": 1,
+          "reasons": [
+            "the model gave no answer within 1 ms",
+            "keyword rules matched: access_or_account <- \"log in\"; access_or_account <- \"account\"",
+            "a fallback decision is always checked by a person"
+          ],
+          "latencyMs": 3,
+          "inputTokens": null,
+          "reportedModel": null,
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T09",
+      "rep": 5,
+      "clientMs": 618.9,
+      "workerMs": 396,
+      "inputTokens": 521,
+      "contextRecords": [],
+      "correct": false,
+      "diffs": [
+        "queue: expected booking_change, got general_question",
+        "urgency: expected normal, got low"
+      ],
+      "decision": {
+        "queue": "general_question",
+        "urgency": "low",
+        "needsHuman": true,
+        "confidence": 0.2634,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.2552,
+            "equipment_fault": 0.0814,
+            "access_or_account": 0.0527,
+            "general_question": 0.6107
+          },
+          "urgencyScore": 0.4797,
+          "urgencyProbabilities": {
+            "low": 0.5357,
+            "normal": 0.449,
+            "high": 0.0153
+          },
+          "needsHumanProbability": 0.7828,
+          "reasons": [
+            "the model judged that a person should read this message (probability 0.7828)",
+            "confidence 0.2634 in the queue is below the threshold 0.6"
+          ],
+          "latencyMs": 396,
+          "inputTokens": 521,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    },
+    {
+      "id": "T10",
+      "rep": 5,
+      "clientMs": 492.2,
+      "workerMs": 283,
+      "inputTokens": 507,
+      "contextRecords": [],
+      "correct": false,
+      "diffs": [
+        "urgency: expected low, got normal"
+      ],
+      "decision": {
+        "queue": "general_question",
+        "urgency": "normal",
+        "needsHuman": true,
+        "confidence": 0.2382,
+        "source": "model",
+        "model": "@cf/cloudflare/clef",
+        "fallbackReason": null,
+        "details": {
+          "queueProbabilities": {
+            "booking_change": 0.4387,
+            "equipment_fault": 0.0286,
+            "access_or_account": 0.0501,
+            "general_question": 0.4826
+          },
+          "urgencyScore": 1.0798,
+          "urgencyProbabilities": {
+            "low": 0.1742,
+            "normal": 0.5718,
+            "high": 0.254
+          },
+          "needsHumanProbability": 0.5418,
+          "reasons": [
+            "the model judged that a person should read this message (probability 0.5418)",
+            "confidence 0.2382 in the queue is below the threshold 0.6"
+          ],
+          "latencyMs": 283,
+          "inputTokens": 507,
+          "reportedModel": "clef",
+          "contextRecords": []
+        }
+      }
+    }
+  ]
+}
