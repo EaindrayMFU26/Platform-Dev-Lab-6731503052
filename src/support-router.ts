@@ -18,7 +18,13 @@
 // No HTTP and no database in this file. The routes in index.ts call routeSupportRequest() and
 // store the result. The model is reached through the small ModelRunner interface, so tests can
 // replace it with a fake that fails, hangs or lies.
+//
+// Assignment A7 added one improvement, switched by the setting ROUTER_GROUNDING (default off):
+// the support guidelines that are relevant to the message (grounding.ts) are added to the state
+// as state.guidelines. With the setting off, the request to the model is exactly the A6 request.
 
+import { selectGuidelines, type Guideline } from './grounding.ts'
+import { findAll, normalise, type Keyword } from './text-match.ts'
 import type { Validated } from './validation'
 
 export const QUEUES = ['booking_change', 'equipment_fault', 'access_or_account', 'general_question'] as const
@@ -58,6 +64,8 @@ export type RoutingDecision = {
     inputTokens: number | null
     /** The model name reported in the answer, for example "clef" or "typesafe/jev-1.14". */
     reportedModel: string | null
+    /** Ids of the knowledge records sent with the request to the model (A7); empty when grounding is off or nothing was sent. */
+    contextRecords: string[]
   }
 }
 
@@ -105,17 +113,22 @@ export const DECISION_QUESTIONS: Questions = {
 export type DecisionRequest = {
   /** Clef's own model selector inside the body. Jev takes a Jev model name here, e.g. "jev-latest". */
   model: 'clef'
-  state: { service: string; message: string; equipmentId?: string; bookingId?: string }
+  state: { service: string; message: string; equipmentId?: string; bookingId?: string; guidelines?: Guideline[] }
   questions: Questions
 }
 
-export function buildDecisionRequest(request: SupportRequest): DecisionRequest {
+/**
+ * The request for one message. With grounding (A7) the relevant support guidelines are added as
+ * the last field of the state; everything else, the questions included, stays exactly as in A6.
+ */
+export function buildDecisionRequest(request: SupportRequest, grounding = false): DecisionRequest {
   const state: DecisionRequest['state'] = {
     service: 'Campus Equipment Booking (projectors, cameras, meeting rooms)',
     message: request.message,
   }
   if (request.context?.equipmentId) state.equipmentId = request.context.equipmentId
   if (request.context?.bookingId) state.bookingId = request.context.bookingId
+  if (grounding) state.guidelines = selectGuidelines(request.message, request.context?.equipmentId).guidelines
   return { model: 'clef', state, questions: DECISION_QUESTIONS }
 }
 
@@ -130,9 +143,11 @@ export type RouterSettings = {
   timeoutMs: number
   /** Below this confidence in the queue, a person must look even if the model answered. 0 to 1. */
   minConfidence: number
+  /** Send the relevant support guidelines to the model (A7). Off unless ROUTER_GROUNDING is "on". */
+  grounding: boolean
 }
 
-export const DEFAULT_SETTINGS: RouterSettings = { model: '@cf/cloudflare/clef', timeoutMs: 8000, minConfidence: 0.6 }
+export const DEFAULT_SETTINGS: RouterSettings = { model: '@cf/cloudflare/clef', timeoutMs: 8000, minConfidence: 0.6, grounding: false }
 const MAX_TIMEOUT_MS = 60_000
 
 // Only plain decimal numbers count. Number() alone would turn '' and '  ' into 0 and '0x10' into 16.
@@ -141,14 +156,23 @@ function readNumber(text: string | undefined, pattern: RegExp): number {
   return pattern.test(value) ? Number(value) : Number.NaN
 }
 
-/** Reads ROUTER_MODEL, ROUTER_TIMEOUT_MS and ROUTER_MIN_CONFIDENCE. Anything missing, blank or out of range keeps its default. */
-export function readSettings(env: { ROUTER_MODEL?: string; ROUTER_TIMEOUT_MS?: string; ROUTER_MIN_CONFIDENCE?: string }): RouterSettings {
+/**
+ * Reads ROUTER_MODEL, ROUTER_TIMEOUT_MS, ROUTER_MIN_CONFIDENCE and ROUTER_GROUNDING. Anything
+ * missing, blank or out of range keeps its default; grounding is on only for the value "on".
+ */
+export function readSettings(env: {
+  ROUTER_MODEL?: string
+  ROUTER_TIMEOUT_MS?: string
+  ROUTER_MIN_CONFIDENCE?: string
+  ROUTER_GROUNDING?: string
+}): RouterSettings {
   const timeoutMs = readNumber(env.ROUTER_TIMEOUT_MS, /^\d+$/)
   const minConfidence = readNumber(env.ROUTER_MIN_CONFIDENCE, /^(\d+\.?\d*|\.\d+)$/)
   return {
     model: env.ROUTER_MODEL?.trim() || DEFAULT_SETTINGS.model,
     timeoutMs: timeoutMs >= 1 && timeoutMs <= MAX_TIMEOUT_MS ? timeoutMs : DEFAULT_SETTINGS.timeoutMs,
     minConfidence: minConfidence >= 0 && minConfidence <= 1 ? minConfidence : DEFAULT_SETTINGS.minConfidence,
+    grounding: env.ROUTER_GROUNDING?.trim().toLowerCase() === 'on',
   }
 }
 
@@ -202,20 +226,27 @@ export async function routeSupportRequest(
   const elapsed = () => Date.now() - startedAt
 
   if (!runner) {
-    return fallbackDecision(request, 'model_unavailable', 'no decision model is configured (the AI binding is missing)', elapsed())
+    return fallbackDecision(request, 'model_unavailable', 'no decision model is configured (the AI binding is missing)', elapsed(), [])
   }
+
+  const decisionRequest = buildDecisionRequest(request, settings.grounding)
+  const contextRecords = (decisionRequest.state.guidelines ?? []).map((guideline) => guideline.id)
 
   let raw: unknown
   try {
-    raw = await withTimeout(runner.run(settings.model, buildDecisionRequest(request)), settings.timeoutMs)
+    raw = await withTimeout(runner.run(settings.model, decisionRequest), settings.timeoutMs)
   } catch (error) {
-    if (error instanceof TimeoutError) return fallbackDecision(request, 'model_timeout', `the model gave ${error.message}`, elapsed())
-    return fallbackDecision(request, 'model_error', `the model call failed: ${describeError(error)}`, elapsed())
+    if (error instanceof TimeoutError) {
+      return fallbackDecision(request, 'model_timeout', `the model gave ${error.message}`, elapsed(), contextRecords)
+    }
+    return fallbackDecision(request, 'model_error', `the model call failed: ${describeError(error)}`, elapsed(), contextRecords)
   }
 
   const answers = parseModelAnswers(raw)
-  if (!answers.ok) return fallbackDecision(request, 'invalid_model_output', `the model's answer was rejected: ${answers.problem}`, elapsed())
-  return decideFromModel(answers.value, settings, elapsed())
+  if (!answers.ok) {
+    return fallbackDecision(request, 'invalid_model_output', `the model's answer was rejected: ${answers.problem}`, elapsed(), contextRecords)
+  }
+  return decideFromModel(answers.value, settings, elapsed(), contextRecords)
 }
 
 // ---------------------------------------------------------------------------------------
@@ -307,7 +338,7 @@ export function parseModelAnswers(raw: unknown): Parsed<ModelAnswers> {
 
 // The policy on top of a valid model answer: the queue is the model's choice, the urgency is the
 // most probable level, and a person is needed when the model says so or when it is not sure.
-function decideFromModel(answers: ModelAnswers, settings: RouterSettings, latencyMs: number): RoutingDecision {
+function decideFromModel(answers: ModelAnswers, settings: RouterSettings, latencyMs: number, contextRecords: string[]): RoutingDecision {
   const urgency = URGENCIES.reduce<Urgency>(
     (best, level) => (answers.urgencyProbabilities[level] > answers.urgencyProbabilities[best] ? level : best),
     'low',
@@ -336,6 +367,7 @@ function decideFromModel(answers: ModelAnswers, settings: RouterSettings, latenc
       latencyMs,
       inputTokens: answers.inputTokens,
       reportedModel: answers.reportedModel,
+      contextRecords,
     },
   }
 }
@@ -355,9 +387,8 @@ function decideFromModel(answers: ModelAnswers, settings: RouterSettings, latenc
 // เสีย ("broken"), which also begins many other words: เสียใจ (sorry), เสียดาย (pity), เสียเวลา
 // (waste of time), เสียง (sound), เสียค่า… (pay a fee), เสียเงิน (cost money), เสียสิทธิ์ (lose a
 // right), เสียบ (plug in), เสียโอกาส, เสียหน้า, เสียชีวิต, เสียสละ. Those continuations are excluded;
-// เสียหาย (damaged) and a plain เสีย still count.
-type Keyword = string | RegExp
-
+// เสียหาย (damaged) and a plain เสีย still count. The matching itself (normalise, findKeyword) is in
+// text-match.ts, shared with the retrieval of grounding context.
 const QUEUE_KEYWORDS: Record<Exclude<Queue, 'general_question'>, readonly Keyword[]> = {
   access_or_account: [
     'log in', 'login', 'log-in', 'sign in', 'password', 'account', 'student id', 'not authorised', 'not authorized',
@@ -384,27 +415,6 @@ const HIGH_URGENCY_KEYWORDS: readonly Keyword[] = [
   'today', 'tonight', 'this morning', 'this afternoon', 'ด่วน', 'ตอนนี้', 'วันนี้', 'บ่ายนี้', 'เช้านี้', 'เดี๋ยวนี้',
 ]
 
-// Lower case, typographic apostrophes (’) as plain ones, and invisible zero-width characters removed,
-// so "doesn’t work" written on a phone matches "doesn't work".
-function normalise(message: string): string {
-  return message
-    .replace(/[​-‏⁠﻿]/g, '')
-    .replace(/[‘’ʼ]/g, "'")
-    .toLowerCase()
-}
-
-// Returns the text that matched, or null. A single Latin word must match as a whole word, so
-// "dead" does not match inside "deadline"; phrases and Thai (which has no spaces between words)
-// match anywhere in the text.
-function findKeyword(text: string, keyword: Keyword): string | null {
-  if (keyword instanceof RegExp) return keyword.exec(text)?.[0] ?? null
-  const found = /^[a-z]+$/.test(keyword) ? new RegExp(`\\b${keyword}\\b`).test(text) : text.includes(keyword)
-  return found ? keyword : null
-}
-
-const findAll = (text: string, keywords: readonly Keyword[]) =>
-  keywords.map((keyword) => findKeyword(text, keyword)).filter((hit): hit is string => hit !== null)
-
 /** The keyword rules on their own, so they can be tested and compared with the model. */
 export function keywordRoute(message: string): { queue: Queue; urgency: Urgency; matched: string[] } {
   const text = normalise(message)
@@ -425,7 +435,13 @@ export function keywordRoute(message: string): { queue: Queue; urgency: Urgency;
   return { queue, urgency, matched }
 }
 
-function fallbackDecision(request: SupportRequest, reason: FallbackReason, detail: string, latencyMs: number): RoutingDecision {
+function fallbackDecision(
+  request: SupportRequest,
+  reason: FallbackReason,
+  detail: string,
+  latencyMs: number,
+  contextRecords: string[],
+): RoutingDecision {
   // The only server-side record of an outage. The message itself is never logged.
   console.warn(`support router: fallback decision (${reason}): ${detail}`)
   const rules = keywordRoute(request.message)
@@ -450,6 +466,7 @@ function fallbackDecision(request: SupportRequest, reason: FallbackReason, detai
       latencyMs,
       inputTokens: null,
       reportedModel: null,
+      contextRecords,
     },
   }
 }

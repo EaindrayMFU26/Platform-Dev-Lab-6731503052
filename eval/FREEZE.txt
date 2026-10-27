@@ -1,0 +1,3 @@
+Frozen before any evaluation run: 2026-10-26T15:00:17Z (22:00 Thailand time)
+6d512372deb78b453897e35abcb374dfb3830a0ffad2476d5c5c97c4e22045b5 *eval/eval-cases.json
+fc202fe529f2d447c7122155de9068423133e7a71438d04299b70890be52355b *src/knowledge-base.json

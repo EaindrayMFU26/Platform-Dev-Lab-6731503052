@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A7 Report 6731503052: Evaluating the Support Request Router</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm 18mm 15mm; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-family: "Segoe UI", "Leelawadee UI", Arial, Helvetica, sans-serif; font-size: 10.5pt; line-height: 1.45; color: #111; background: #fff; max-width: 190mm; margin: 0 auto; }
+  h1 { font-size: 20pt; margin: 0 0 4pt; }
+  h2 { font-size: 15pt; margin: 22pt 0 6pt; border-bottom: 1.5px solid #333; padding-bottom: 3pt; break-after: avoid; }
+  h3 { font-size: 12pt; margin: 16pt 0 4pt; break-after: avoid; }
+  p { margin: 5pt 0; }
+  ul, ol { margin: 4pt 0 6pt; padding-left: 20pt; }
+  li { margin: 2pt 0; }
+  table { border-collapse: collapse; width: 100%; margin: 6pt 0 10pt; font-size: 9pt; }
+  th, td { border: 1px solid #999; padding: 3pt 5pt; vertical-align: top; text-align: left; }
+  th { background: #e9edf3; }
+  tr { break-inside: avoid; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: 9pt; background: #f2f2f2; padding: 0 2pt; }
+  pre { font-family: Consolas, "Courier New", monospace; font-size: 8.4pt; background: #f6f6f6; border: 1px solid #ccc; padding: 6pt 8pt; white-space: pre-wrap; word-break: break-word; margin: 6pt 0 10pt; }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  figure.arch { margin: 8pt 0 12pt; break-inside: avoid; }
+  a { color: #1a4d8f; text-decoration: none; }
+  input[type=checkbox] { vertical-align: middle; }
+</style></head>
+<body>
+<h1>A7: Evaluate and Improve Your AI Capability</h1>
+<p><strong>Student Name:</strong> Eaindray<br><strong>Student ID:</strong> 6731503052<br><strong>Course:</strong> 1305308 Platform Development, Week 09: Retrieval, Context and Evaluation<br><strong>Project / Capability Name:</strong> Support Request Router for the Campus Equipment Booking API (the A6 capability, evaluated and improved)<br><strong>A6 Project Reference:</strong> the A6 report <code>docs/A6/A6_6731503052.pdf</code>. The A6 state of the project, without any A7 change, is commit <code>fc9c144</code> on GitHub: <a href="https://github.com/EaindrayMFU26/Platform-Dev-Lab-6731503052/tree/fc9c1441966fc6acb6972759a296b1c1264bf582">https://github.com/EaindrayMFU26/Platform-Dev-Lab-6731503052/tree/fc9c1441966fc6acb6972759a296b1c1264bf582</a>. It holds the same files as the local snapshot <code>A6_6731503052_project.zip</code>, which is not part of this submission.<br><strong>Implementation Method:</strong> Other, as in A6: Cloudflare Workers AI <code>@cf/cloudflare/clef</code>, a decision model with the same Choice / Score / Noul questions as Jev, called from the project&#39;s Hono Worker.<br><strong>Prepared with:</strong> Claude Code, an AI coding tool, which wrote the knowledge base, the evaluation cases, the code, ran every measurement and wrote this report (section 8 and <code>AI_LOG.md</code>, part 3).<br><strong>Source code and evidence:</strong> the project folder <code>Platform-Dev-Lab-6731503052</code>. The evaluation is in <code>eval/</code>: <code>eval-cases.json</code>, the runner, the raw results in <code>eval/results/</code>, the execution logs <code>BASELINE_EVIDENCE.md</code>, <code>IMPROVED_EVIDENCE.md</code>, <code>COMPARISON.md</code> and <code>LATENCY_CHECK.md</code>, and the freeze record <code>FREEZE.txt</code>. The improvement is <code>src/grounding.ts</code> and <code>src/knowledge-base.json</code>; <code>eval/improvement.diff</code> shows every change against A6. GitHub: <a href="https://github.com/EaindrayMFU26/Platform-Dev-Lab-6731503052/tree/a6-a7-support-router">https://github.com/EaindrayMFU26/Platform-Dev-Lab-6731503052/tree/a6-a7-support-router</a>, the branch <code>a6-a7-support-router</code>, pushed on 27 October 2026, with the A6 and the A7 work as separate commits.<br><strong>Date:</strong> 26 October 2026</p>
+<p>The capability is the one from A6. A support message about the booking service arrives as free text, and the decision model answers three typed questions: which <strong>queue</strong> handles it (<code>booking_change</code>, <code>equipment_fault</code>, <code>access_or_account</code> or <code>general_question</code>), how <strong>urgent</strong> it is (<code>low</code>, <code>normal</code> or <code>high</code>), and whether a <strong>person</strong> must read it before anything happens automatically (<code>needsHuman</code>). When the model fails or times out, deterministic keyword rules decide instead, and the decision is always flagged for a person.</p>
+<h2>1. Grounding Context</h2>
+<p><strong>Knowledge Source:</strong> the support guidelines of the booking service, written for this project as a small local JSON knowledge base, <code>src/knowledge-base.json</code>. They describe how this lab platform handles support messages: what each queue covers, what the urgency levels mean, when a person must read a message, and some service facts (booking rules, fines, equipment). They are the platform&#39;s own rules, not the policy of a real university office.</p>
+<p><strong>Knowledge Records:</strong> 10 records. KB05 and KB07 apply to every message and are always sent; the others are chosen per message.</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Title</th>
+<th>Content (shortened)</th>
+<th>Example keywords</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>KB01</td>
+<td>Queue: booking changes</td>
+<td>Creating, moving, extending, shortening or cancelling a booking, a wrong or double booking, and a dispute about a fine for a booking go to booking_change.</td>
+<td>booking, cancel, reschedule, ยกเลิก, จอง</td>
+</tr>
+<tr>
+<td>KB02</td>
+<td>Queue: equipment faults</td>
+<td>Broken, damaged, missing or not working equipment goes to equipment_fault; with no time mentioned or needed tomorrow or later, urgency is normal.</td>
+<td>broken, won&#39;t turn on, เสีย, เปิดไม่ติด</td>
+</tr>
+<tr>
+<td>KB03</td>
+<td>Queue: access and accounts</td>
+<td>Sign-in problems, forgotten passwords, locked accounts, permissions and student ID errors go to access_or_account.</td>
+<td>password, sign in, locked, รหัสผ่าน</td>
+</tr>
+<tr>
+<td>KB04</td>
+<td>Queue: general questions and other services</td>
+<td>Questions about rules and how to use the service, and requests for services this platform does not provide (transport, catering, parking), are general_question with low urgency; a person names the right office.</td>
+<td>how many, rule, bus, transport</td>
+</tr>
+<tr>
+<td>KB05</td>
+<td>Urgency levels (always)</td>
+<td>high: needed within 4 hours and unusable, or a safety risk; normal: within one working day, including problems without a deadline today and bookings for tomorrow or later; low: no time pressure, and services outside this platform.</td>
+<td>(always sent)</td>
+</tr>
+<tr>
+<td>KB06</td>
+<td>Safety problems</td>
+<td>Sparks, smoke, burning smell, shocks, overheating or water near electrical equipment: equipment_fault, high urgency, a person at once.</td>
+<td>spark, smoke, burning, ไหม้</td>
+</tr>
+<tr>
+<td>KB07</td>
+<td>When a person must read (always)</td>
+<td>Complaints, repeated problems, money (fines, fees, refunds), safety, out-of-scope requests, unclear messages and instructions aimed at the system need a person; one routine, clear request is handled automatically.</td>
+<td>(always sent)</td>
+</tr>
+<tr>
+<td>KB08</td>
+<td>Booking rules</td>
+<td>Up to 14 days ahead, at most 4 hours per booking, at most 2 active bookings, free cancellation up to 2 hours before.</td>
+<td>maximum, how long, limit</td>
+</tr>
+<tr>
+<td>KB09</td>
+<td>Fees and fines</td>
+<td>50 baht per started hour when more than 30 minutes late; a fee question is a general_question; a dispute about a fine goes to booking_change, normal, with a person.</td>
+<td>fine, charged, refund, ค่าปรับ</td>
+</tr>
+<tr>
+<td>KB10</td>
+<td>Equipment and rooms</td>
+<td>eq-1 Projector A (Building 1, HDMI cable); eq-2 Camera B (Media Lab, battery and charger, no tripod); eq-3 Meeting Room C (Building 2, 10 seats).</td>
+<td>projector, camera, room, eq-2</td>
+</tr>
+</tbody></table>
+<p><strong>Retrieval / Selection Method:</strong> deterministic keyword retrieval in <code>src/grounding.ts</code>; no vector database.</p>
+<ol>
+<li>KB05 and KB07 are always selected, because the urgency levels and the rule for when a person must read apply to every message.</li>
+<li>Every other record gets a score: the number of its keywords (English and Thai) found in the message and in the equipment id from the context. The matching uses the same functions as the fallback: lower case, typographic apostrophes as plain ones, whole words for single English words, and substrings for phrases and Thai. The keyword lists are separate, and they hold plain words only, so the exceptions the fallback makes for the Thai word เสีย do not apply here (see the trade-offs in section 6).</li>
+<li>The three records with the highest score (at least 1) are added; a tie goes to the record listed first.</li>
+</ol>
+<p>The selected records go to the model in knowledge-base order, with id, title and text only. At most five records are sent.</p>
+<p><strong>Context Supplied to Model:</strong> the records are added to the state of the decision request as <code>state.guidelines</code>. Everything else stays as in A6: the model, the three questions, the thresholds and the fallback. The request for evaluation case T09 with the improvement switched on (the questions are left out here; they are unchanged):</p>
+<pre><code class="language-json">{
+  &quot;model&quot;: &quot;clef&quot;,
+  &quot;state&quot;: {
+    &quot;service&quot;: &quot;Campus Equipment Booking (projectors, cameras, meeting rooms)&quot;,
+    &quot;message&quot;: &quot;I was charged a late-return fine for Camera B, but I returned it on time. Please remove the fine.&quot;,
+    &quot;equipmentId&quot;: &quot;eq-2&quot;,
+    &quot;guidelines&quot;: [
+      { &quot;id&quot;: &quot;KB05&quot;, &quot;title&quot;: &quot;Urgency levels&quot;, &quot;text&quot;: &quot;high: the sender needs the equipment, room or booking within the next 4 hours and cannot use it, or there is a safety risk. normal: should be handled within one working day; this includes faults and sign-in problems with no deadline today, and problems with bookings for tomorrow or later. low: questions and requests with no time pressure, and requests for services outside this platform.&quot; },
+      { &quot;id&quot;: &quot;KB07&quot;, &quot;title&quot;: &quot;When a person must read the message&quot;, &quot;text&quot;: &quot;A person must read the message before any automatic action when it is a complaint or reports a repeated problem, involves money (fines, fees, refunds), involves safety, asks for something this platform does not provide, is unclear or contradicts itself, or contains instructions aimed at the routing system. A routine, clear request (one booking change, one fault report, one sign-in problem or one question about the service) is handled automatically.&quot; },
+      { &quot;id&quot;: &quot;KB09&quot;, &quot;title&quot;: &quot;Fees and fines&quot;, &quot;text&quot;: &quot;Equipment returned more than 30 minutes late is fined 50 baht per started hour. A question about fees is a general_question. A dispute about a fine or charge for a booking goes to booking_change with normal urgency, and a person must read it.&quot; },
+      { &quot;id&quot;: &quot;KB10&quot;, &quot;title&quot;: &quot;Equipment and rooms&quot;, &quot;text&quot;: &quot;eq-1 Projector A: Building 1, comes with an HDMI cable. eq-2 Camera B: Media Lab, comes with a battery and a charger, no tripod. eq-3 Meeting Room C: Building 2, 10 seats and a wall screen.&quot; }
+    ]
+  },
+  &quot;questions&quot;: &quot;(unchanged: queue, urgency, needs_human)&quot;
+}
+</code></pre>
+<figure class="arch"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1060 560" style="width:100%;height:auto;max-width:960px;display:block;margin:0 auto" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="13">
+  <title>A7: how the retrieved guidelines reach the model, and how the evaluation runs</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#333"/>
+    </marker>
+    <marker id="arrow-new" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#b35c00"/>
+    </marker>
+  </defs>
+
+  <text x="20" y="28" font-size="15" font-weight="700" fill="#222">The one improvement: retrieved support guidelines are added to the state (ROUTER_GROUNDING=on)</text>
+
+  <!-- message -->
+  <rect x="20" y="60" width="170" height="92" rx="10" fill="#eef3fb" stroke="#4a6fa5" stroke-width="1.5"/>
+  <text x="105" y="86" text-anchor="middle" font-weight="600">Support message</text>
+  <text x="105" y="106" text-anchor="middle" font-size="12">message text and the</text>
+  <text x="105" y="122" text-anchor="middle" font-size="12">optional equipment id</text>
+  <text x="105" y="140" text-anchor="middle" font-size="11" fill="#555">POST /api/support/route</text>
+
+  <!-- retrieval -->
+  <rect x="230" y="48" width="330" height="190" rx="10" fill="#fff6e8" stroke="#b86e00" stroke-width="1.5"/>
+  <text x="395" y="72" text-anchor="middle" font-weight="600">selectGuidelines() (src/grounding.ts) — new in A7</text>
+  <text x="395" y="92" text-anchor="middle" font-size="12">knowledge base: src/knowledge-base.json, 10 records</text>
+  <text x="246" y="118" font-size="12">1. always: KB05 urgency levels,</text>
+  <text x="262" y="134" font-size="12">KB07 when a person must read</text>
+  <text x="246" y="156" font-size="12">2. score every other record: how many of its</text>
+  <text x="262" y="172" font-size="12">keywords (English and Thai) occur in the message</text>
+  <text x="246" y="194" font-size="12">3. add the 3 best (score ≥ 1; a tie goes to the</text>
+  <text x="262" y="210" font-size="12">record listed first); no vector database</text>
+  <text x="395" y="230" text-anchor="middle" font-size="11" fill="#8a4b00">same keyword matching as the fallback</text>
+
+  <!-- request -->
+  <rect x="600" y="48" width="200" height="190" rx="10" fill="#f6f8fa" stroke="#555" stroke-width="1.5"/>
+  <text x="700" y="72" text-anchor="middle" font-weight="600">Request to the model</text>
+  <text x="616" y="98" font-size="12">model: "clef"</text>
+  <text x="616" y="118" font-size="12">state: service, message,</text>
+  <text x="630" y="134" font-size="12">equipmentId (as in A6)</text>
+  <text x="630" y="152" font-size="12" fill="#b35c00" font-weight="600">+ guidelines: [ {id,</text>
+  <text x="644" y="168" font-size="12" fill="#b35c00" font-weight="600">title, text}, … ]</text>
+  <text x="616" y="192" font-size="12">questions: queue, urgency,</text>
+  <text x="630" y="208" font-size="12">needs_human (unchanged)</text>
+
+  <!-- model -->
+  <rect x="840" y="48" width="200" height="190" rx="10" fill="#eefaf0" stroke="#2e7d32" stroke-width="1.5"/>
+  <text x="940" y="72" text-anchor="middle" font-weight="600">@cf/cloudflare/clef</text>
+  <text x="940" y="92" text-anchor="middle" font-size="12">(Workers AI, unchanged)</text>
+  <text x="940" y="124" text-anchor="middle" font-size="12">answers with probabilities;</text>
+  <text x="940" y="142" text-anchor="middle" font-size="12">validation, policy (0.5 / 0.6)</text>
+  <text x="940" y="160" text-anchor="middle" font-size="12">and fallback as in A6</text>
+  <text x="940" y="190" text-anchor="middle" font-size="12">decision + details.</text>
+  <text x="940" y="206" text-anchor="middle" font-size="12">contextRecords (ids sent)</text>
+
+  <!-- arrows top -->
+  <line x1="190" y1="106" x2="228" y2="106" stroke="#b35c00" stroke-width="1.6" marker-end="url(#arrow-new)"/>
+  <line x1="560" y1="150" x2="598" y2="150" stroke="#b35c00" stroke-width="1.6" marker-end="url(#arrow-new)"/>
+  <line x1="800" y1="143" x2="838" y2="143" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- baseline bypass -->
+  <path d="M 105 152 L 105 262 L 700 262 L 700 240" fill="none" stroke="#666" stroke-width="1.4" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+  <text x="400" y="280" text-anchor="middle" font-size="12" fill="#444">Baseline (ROUTER_GROUNDING=off, the default): no retrieval, the request is exactly the A6 request</text>
+
+  <!-- evaluation -->
+  <text x="20" y="330" font-size="15" font-weight="700" fill="#222">The evaluation: the same 10 cases, 5 times each, against both variants</text>
+
+  <rect x="20" y="352" width="200" height="110" rx="10" fill="#f3eefb" stroke="#6a4c93" stroke-width="1.5"/>
+  <text x="120" y="376" text-anchor="middle" font-weight="600">eval/eval-cases.json</text>
+  <text x="120" y="396" text-anchor="middle" font-size="12">3 normal, 3 edge, 2 fallback,</text>
+  <text x="120" y="412" text-anchor="middle" font-size="12">2 difficult; expectations from</text>
+  <text x="120" y="428" text-anchor="middle" font-size="12">the knowledge base, frozen</text>
+  <text x="120" y="444" text-anchor="middle" font-size="12">(SHA-256) before any run</text>
+
+  <rect x="260" y="352" width="290" height="110" rx="10" fill="#f6f8fa" stroke="#555" stroke-width="1.5"/>
+  <text x="405" y="376" text-anchor="middle" font-weight="600">npm run eval -- --variant …</text>
+  <text x="405" y="396" text-anchor="middle" font-size="12">real curl requests, timed by curl;</text>
+  <text x="405" y="412" text-anchor="middle" font-size="12">model cases → server :8787, T07 → :8789</text>
+  <text x="405" y="428" text-anchor="middle" font-size="12">(model fails), T08 → :8790 (1 ms limit)</text>
+  <text x="405" y="444" text-anchor="middle" font-size="12">refuses to run on the wrong variant</text>
+
+  <rect x="590" y="352" width="200" height="110" rx="10" fill="#f6f8fa" stroke="#555" stroke-width="1.5"/>
+  <text x="690" y="376" text-anchor="middle" font-weight="600">eval/results/*.json</text>
+  <text x="690" y="396" text-anchor="middle" font-size="12">every decision, response</text>
+  <text x="690" y="412" text-anchor="middle" font-size="12">time and token count;</text>
+  <text x="690" y="428" text-anchor="middle" font-size="12">execution logs</text>
+  <text x="690" y="444" text-anchor="middle" font-size="12">eval/*_EVIDENCE.md</text>
+
+  <rect x="830" y="352" width="210" height="110" rx="10" fill="#eefaf0" stroke="#2e7d32" stroke-width="1.5"/>
+  <text x="935" y="376" text-anchor="middle" font-weight="600">npm run eval:compare</text>
+  <text x="935" y="396" text-anchor="middle" font-size="12">accuracy, p95 latency,</text>
+  <text x="935" y="412" text-anchor="middle" font-size="12">tokens and estimated cost,</text>
+  <text x="935" y="428" text-anchor="middle" font-size="12">before and after, per case</text>
+  <text x="935" y="444" text-anchor="middle" font-size="12">→ eval/COMPARISON.md</text>
+
+  <line x1="220" y1="407" x2="258" y2="407" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="550" y1="407" x2="588" y2="407" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="790" y1="407" x2="828" y2="407" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <text x="20" y="500" font-size="12" fill="#444">Only one thing differs between the two runs: ROUTER_GROUNDING. The model, the questions, the thresholds, the fallback and the</text>
+  <text x="20" y="518" font-size="12" fill="#444">10 cases are the same; a unit check proves that with grounding off the request is byte-identical to the request of A6.</text>
+</svg>
+</figure>
+<p><strong>Why the selected context is useful.</strong> In A6 the model knew the platform only from the one-line descriptions of the four queues and three urgency levels. Urgency was the weakest decision, and the A6 report traced that to vague level descriptions. A6 inputs 9 and 10 came back &quot;high&quot; where &quot;normal&quot; was expected. Decisions that depend on the platform&#39;s own rules cannot come from the message alone: where a fine dispute goes, what counts as urgent for a sign-in problem, and what happens to requests the platform does not serve. The guidelines state those rules next to the message, so the model can apply them instead of guessing. Retrieval keeps the request small: only the records that match the message are sent.</p>
+<h2>2. Evaluation Dataset</h2>
+<p><code>eval/eval-cases.json</code>, 10 cases. The expected results follow the guidelines above; the reasons in the file cite the record each one comes from. The dataset and the knowledge base were frozen before any evaluation run: their SHA-256 hashes were recorded at 15:00:17 UTC on 26 October 2026, in <code>eval/FREEZE.txt</code>. That record was written in the AI tool&#39;s working folder and copied into the project unchanged after the review. Both run logs and <code>eval/COMPARISON.md</code> repeat the hashes; the interleaved latency check does not record them. Before freezing, the two fallback expectations were compared with the deterministic keyword rules, and both matched as written. No expectation was changed after that.</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Case Type</th>
+<th>Input</th>
+<th>Expected Output (queue / urgency / who)</th>
+<th>Expected Review/Fallback</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>T01</td>
+<td>Normal</td>
+<td>Please move my Projector A booking from Thursday 10:00 to Friday at the same time. (eq-1)</td>
+<td>booking_change / normal / auto</td>
+<td>automatic</td>
+<td>a booking change, not within 4 hours, one clear request (KB01, KB05, KB07)</td>
+</tr>
+<tr>
+<td>T02</td>
+<td>Normal</td>
+<td>I forgot my password and can&#39;t sign in to the booking system.</td>
+<td>access_or_account / normal / auto</td>
+<td>automatic</td>
+<td>a sign-in problem with no deadline today is normal (KB03, KB05)</td>
+</tr>
+<tr>
+<td>T03</td>
+<td>Normal</td>
+<td>How many people can Meeting Room C hold?</td>
+<td>general_question / low / auto</td>
+<td>automatic</td>
+<td>a question with no time pressure (KB04, KB05, KB10)</td>
+</tr>
+<tr>
+<td>T04</td>
+<td>Edge</td>
+<td>ขอยกเลิกการจองห้องประชุม C วันศุกร์นี้ค่ะ (Thai: please cancel my Meeting Room C booking this Friday)</td>
+<td>booking_change / normal / auto</td>
+<td>automatic</td>
+<td>a cancellation, Friday is not within 4 hours; edge: Thai (KB01, KB05)</td>
+</tr>
+<tr>
+<td>T05</td>
+<td>Edge</td>
+<td>projector broken</td>
+<td>equipment_fault / normal / auto</td>
+<td>automatic</td>
+<td>a fault with no time mentioned is normal; edge: two words, no context (KB02, KB05)</td>
+</tr>
+<tr>
+<td>T06</td>
+<td>Edge</td>
+<td>the camra in medai lab wont turn on, i need it tmrw morning for a shoot</td>
+<td>equipment_fault / normal / auto</td>
+<td>automatic</td>
+<td>needed tomorrow, so normal; edge: misspellings (KB02, KB05)</td>
+</tr>
+<tr>
+<td>T07</td>
+<td>Fallback</td>
+<td>The projector in Building 1 doesn&#39;t work and my lecture starts in 20 minutes. (eq-1), with the model failing</td>
+<td>equipment_fault / high / person</td>
+<td>fallback, <code>model_error</code>, a person</td>
+<td>the keyword rules find &quot;doesn&#39;t work&quot; and &quot;minutes&quot;; every fallback needs a person</td>
+</tr>
+<tr>
+<td>T08</td>
+<td>Fallback</td>
+<td>My account is locked and I can&#39;t log in., with the model too slow</td>
+<td>access_or_account / normal / person</td>
+<td>fallback, <code>model_timeout</code>, a person</td>
+<td>the keyword rules find &quot;account&quot; and &quot;log in&quot;, no urgency word</td>
+</tr>
+<tr>
+<td>T09</td>
+<td>Difficult</td>
+<td>I was charged a late-return fine for Camera B, but I returned it on time. Please remove the fine. (eq-2)</td>
+<td>booking_change / normal / person</td>
+<td>a person must read it (money)</td>
+<td>a fine dispute goes to booking_change, normal, with a person (KB01, KB09, KB07)</td>
+</tr>
+<tr>
+<td>T10</td>
+<td>Difficult</td>
+<td>Can you book a bus to take my class to the science museum tomorrow?</td>
+<td>general_question / low / person</td>
+<td>a person must read it (outside this platform)</td>
+<td>transport is not provided: general_question, low, a person names the right office; &quot;book&quot; and &quot;tomorrow&quot; mislead (KB04, KB05, KB07)</td>
+</tr>
+</tbody></table>
+<p>A case is <strong>correct</strong> when queue, urgency and needsHuman all equal the expected values; for a fallback case the decision must also come from the fallback with the expected <code>fallbackReason</code>. Every case was sent 5 times, and it counts as correct only if all 5 repetitions are correct. Case T07 goes to a server started with a model id that does not exist, and T08 to a server whose model time limit is 1 ms. That is how the two fallback cases reach the fallback in the same run as the other cases.</p>
+<h2>3. Baseline Evaluation</h2>
+<p>The baseline is the A6 capability unchanged: <code>ROUTER_GROUNDING</code> off, the default. With the setting off, the request sent to the model is byte-identical to the request recorded in A6; a unit check compares the two. Run at 15:11:55 UTC (<code>eval/BASELINE_EVIDENCE.md</code>, <code>eval/results/baseline.json</code>). Latency is the median of the 5 repetitions, with the range in brackets.</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Expected Output</th>
+<th>Actual Output</th>
+<th>Pass/Fail</th>
+<th>Latency (ms)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>T01</td>
+<td>booking_change / normal / auto</td>
+<td>booking_change / normal / auto</td>
+<td>PASS</td>
+<td>639.8 (461 to 1605)</td>
+</tr>
+<tr>
+<td>T02</td>
+<td>access_or_account / normal / auto</td>
+<td>access_or_account / <strong>high</strong> / auto</td>
+<td>FAIL</td>
+<td>645.3 (556 to 729)</td>
+</tr>
+<tr>
+<td>T03</td>
+<td>general_question / low / auto</td>
+<td>general_question / low / auto</td>
+<td>PASS</td>
+<td>662.8 (526 to 856)</td>
+</tr>
+<tr>
+<td>T04</td>
+<td>booking_change / normal / auto</td>
+<td>booking_change / normal / auto</td>
+<td>PASS</td>
+<td>701.2 (611 to 938)</td>
+</tr>
+<tr>
+<td>T05</td>
+<td>equipment_fault / normal / auto</td>
+<td>equipment_fault / <strong>low</strong> / auto</td>
+<td>FAIL</td>
+<td>626.3 (553 to 775)</td>
+</tr>
+<tr>
+<td>T06</td>
+<td>equipment_fault / normal / auto</td>
+<td>equipment_fault / <strong>high</strong> / auto</td>
+<td>FAIL</td>
+<td>661.7 (633 to 716)</td>
+</tr>
+<tr>
+<td>T07</td>
+<td>equipment_fault / high / person (fallback, model_error)</td>
+<td>equipment_fault / high / person (fallback, model_error)</td>
+<td>PASS</td>
+<td>362.3 (336 to 394)</td>
+</tr>
+<tr>
+<td>T08</td>
+<td>access_or_account / normal / person (fallback, model_timeout)</td>
+<td>access_or_account / normal / person (fallback, model_timeout)</td>
+<td>PASS</td>
+<td>223.6 (214 to 237)</td>
+</tr>
+<tr>
+<td>T09</td>
+<td>booking_change / normal / person</td>
+<td><strong>general_question</strong> / <strong>low</strong> / person</td>
+<td>FAIL</td>
+<td>618.9 (526 to 902)</td>
+</tr>
+<tr>
+<td>T10</td>
+<td>general_question / low / person</td>
+<td>general_question / <strong>normal</strong> / person</td>
+<td>FAIL</td>
+<td>611.3 (492 to 1105)</td>
+</tr>
+</tbody></table>
+<p><strong>Baseline Accuracy:</strong> 5 / 10 = 50% (measured). By field: queue 9/10, urgency 5/10, who-decides 10/10. All five repetitions of every case gave the same decision.</p>
+<p><strong>p95 Latency:</strong> 937.8 ms (measured: p95 of all 50 requests, nearest-rank; p50 626.3 ms; max 1604.5 ms). Inside the Worker, the decision itself took p50 420 ms and p95 724 ms.</p>
+<p><strong>Cost per Task:</strong> about $0.000122 per decision (estimate). The input tokens are measured: the model reported 509 per decision on average, from 495 to 521. The price is Cloudflare&#39;s published $0.24 per million input tokens for Clef; output tokens are free. That is 11.1 neurons per decision. On the free plan these requests cost nothing within the daily allowance of 10,000 neurons. The two fallback cases report no tokens: the failed call (T07) did not run the model, and the cost of the call abandoned after 1 ms (T08) is not reported, so they are not included.</p>
+<p><strong>Measurement Method:</strong> <code>npm run eval -- --variant baseline</code> (<code>eval/run-eval.mjs</code>), against the three local servers (<code>npm run dev</code>, <code>npm run dev:fallback</code>, <code>npm run dev:timeout</code>) running on the student&#39;s laptop in Thailand. The model itself runs on Cloudflare, so every latency includes the network round trip. Each request is a real <code>curl</code> command, and its response time is curl&#39;s own <code>time_total</code>, so starting the process is not counted. Each server got one unmeasured warm-up request. Every median and percentile in this report is nearest-rank: p/100 × n, rounded up, gives the position of the value in the sorted list. For an even number of values, the median is therefore the lower of the two middle values. The 10 cases were then sent one at a time, in 5 rounds (T01 to T10, then again): 50 measured requests. The runner checks every response against the variant. It refuses to record a baseline result if any decision used grounding, and an improved result if any did not. It also writes the SHA-256 hashes of the dataset and the knowledge base into the log; in both runs they equal the hashes frozen before the first run.</p>
+<h2>4. One Controlled Improvement</h2>
+<p><strong>Selected Improvement:</strong> more relevant grounding context. The router selects the support guidelines that are relevant to the message (section 1) and sends them to the model as <code>state.guidelines</code>. One setting switches it: <code>ROUTER_GROUNDING=on</code>. Nothing else changed: the model, the three questions and their wording, the 0.5 and 0.6 thresholds, the answer validation and the fallback are all the same. The decision also lists the ids of the records it sent, in <code>details.contextRecords</code>, so the evidence shows the context of every case.</p>
+<p><strong>Reason for Choosing It:</strong> in A6, urgency was the weakest decision, and the reflection there named the vague level descriptions as the cause. The baseline confirms it with numbers. All five failures include a wrong urgency (urgency 5/10): T02 high instead of normal, T05 low instead of normal, T06 high although the camera is needed tomorrow, T09 low instead of normal, and T10 normal for a request the platform does not serve. T09 also has the wrong queue, because of a rule the model cannot know: on this platform a fine dispute goes to booking_change. All five depend on the platform&#39;s own rules, which the model never saw. The knowledge base was prepared for Task 1 before the baseline ran, so this improvement was planned from the A6 findings; the baseline confirmed that those findings were the main problem.</p>
+<p><strong>Before Configuration:</strong> <code>ROUTER_GROUNDING=off</code> (the default in <code>wrangler.jsonc</code>). The state is the A6 state:</p>
+<pre><code class="language-json">{ &quot;service&quot;: &quot;Campus Equipment Booking (projectors, cameras, meeting rooms)&quot;, &quot;message&quot;: &quot;...&quot;, &quot;equipmentId&quot;: &quot;eq-2&quot; }
+</code></pre>
+<p><strong>After Configuration:</strong> <code>ROUTER_GROUNDING=on</code> (for the evaluation: the same three servers started with <code>-- --var ROUTER_GROUNDING:on</code>). The state gains one field, <code>guidelines</code>, as in the T09 example in section 1. In the code, <code>buildDecisionRequest()</code> adds the field when the setting is on:</p>
+<pre><code class="language-ts">if (grounding) state.guidelines = selectGuidelines(request.message, request.context?.equipmentId).guidelines
+</code></pre>
+<p><code>eval/improvement.diff</code> holds the whole change against A6, that is, against the files of the A6 commit <code>fc9c144</code>: <code>src/grounding.ts</code> (the retrieval), <code>src/knowledge-base.json</code>, the setting, and the new response field. It also shows the keyword-matching helpers, which moved into <code>src/text-match.ts</code> so the retrieval can share them. Their logic is unchanged; they are now exported, and the two character classes in <code>normalise()</code> are written as <code>\u</code> escapes instead of literal invisible characters and curly apostrophes (the same code points). Unit checks (<code>eval/GROUNDING_UNIT_EVIDENCE.md</code>, 22 of 22) show that grounding off gives the exact A6 request, that grounding on adds only <code>state.guidelines</code>, and how the retrieval chooses. No evaluation case matched more than two topic records, so the limit of three and the ranking by keyword hits were tested only by these unit checks. The 78 unit checks of A6 also pass on this code (<code>eval/A6_UNIT_ON_A7_EVIDENCE.md</code>). They were run on a copy of the project, so that the A6 evidence file was not rewritten; <code>eval/A6_UNIT_ON_A7_INPUTS.sha256</code> lists the files of that copy, and they are byte-identical to the project&#39;s.</p>
+<h2>5. After-Improvement Evaluation</h2>
+<p><code>npm run eval -- --variant improved</code>, run at 15:14:05 UTC, two minutes after the baseline (<code>eval/IMPROVED_EVIDENCE.md</code>, <code>eval/results/improved.json</code>). The setup and method are the same as in section 3, with all three servers started with grounding on.</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Expected Output</th>
+<th>Actual Output</th>
+<th>Pass/Fail</th>
+<th>Latency (ms)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>T01</td>
+<td>booking_change / normal / auto</td>
+<td>booking_change / normal / auto</td>
+<td>PASS</td>
+<td>881.4 (586 to 1552)</td>
+</tr>
+<tr>
+<td>T02</td>
+<td>access_or_account / normal / auto</td>
+<td>access_or_account / normal / auto</td>
+<td>PASS</td>
+<td>997.3 (606 to 1362)</td>
+</tr>
+<tr>
+<td>T03</td>
+<td>general_question / low / auto</td>
+<td>general_question / low / auto</td>
+<td>PASS</td>
+<td>1335.7 (597 to 2262)</td>
+</tr>
+<tr>
+<td>T04</td>
+<td>booking_change / normal / auto</td>
+<td>booking_change / normal / auto</td>
+<td>PASS</td>
+<td>1086.4 (645 to 1492)</td>
+</tr>
+<tr>
+<td>T05</td>
+<td>equipment_fault / normal / auto</td>
+<td>equipment_fault / normal / auto</td>
+<td>PASS</td>
+<td>648.2 (482 to 1336)</td>
+</tr>
+<tr>
+<td>T06</td>
+<td>equipment_fault / normal / auto</td>
+<td>equipment_fault / normal / auto</td>
+<td>PASS</td>
+<td>780.6 (653 to 2931)</td>
+</tr>
+<tr>
+<td>T07</td>
+<td>equipment_fault / high / person (fallback, model_error)</td>
+<td>equipment_fault / high / person (fallback, model_error)</td>
+<td>PASS</td>
+<td>370.2 (351 to 409)</td>
+</tr>
+<tr>
+<td>T08</td>
+<td>access_or_account / normal / person (fallback, model_timeout)</td>
+<td>access_or_account / normal / person (fallback, model_timeout)</td>
+<td>PASS</td>
+<td>233.6 (221 to 237)</td>
+</tr>
+<tr>
+<td>T09</td>
+<td>booking_change / normal / person</td>
+<td>booking_change / normal / person</td>
+<td>PASS</td>
+<td>818.1 (652 to 1497)</td>
+</tr>
+<tr>
+<td>T10</td>
+<td>general_question / low / person</td>
+<td>general_question / low / person</td>
+<td>PASS</td>
+<td>800.9 (646 to 1936)</td>
+</tr>
+</tbody></table>
+<p>Accuracy 10 / 10 = 100% (measured); all five repetitions of every case gave the same decision. Records sent per case: T01 KB01, KB05, KB07, KB10; T02 KB01, KB03, KB05, KB07; T03 KB04, KB05, KB07, KB10; T04 KB01, KB05, KB07, KB10; T05 KB02, KB05, KB07, KB10; T06 KB02, KB05, KB07; T09 KB05, KB07, KB09, KB10; T10 KB04, KB05, KB07. The fallback cases T07 and T08 also list the records that went with the failed call, but the fallback does not use them.</p>
+<h2>6. Before / After Comparison</h2>
+<p>From <code>eval/COMPARISON.md</code> (<code>npm run eval:compare</code>), which also checks that both runs used the same frozen dataset and knowledge base:</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Before</th>
+<th>After</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Accuracy (measured)</td>
+<td>5/10 = 50%</td>
+<td>10/10 = 100%</td>
+<td>+50 points</td>
+</tr>
+<tr>
+<td>p95 Latency (measured, 50 requests each)</td>
+<td>937.8 ms</td>
+<td>1962.6 ms</td>
+<td>+1024.8 ms (+109%), but see the interleaved check below</td>
+</tr>
+<tr>
+<td>Cost per Task (estimate from measured tokens)</td>
+<td>$0.000122 (509 tokens, 11.1 neurons)</td>
+<td>$0.000201 (837 tokens, 18.3 neurons)</td>
+<td>+64%</td>
+</tr>
+</tbody></table>
+<p><strong>Interleaved latency check.</strong> The two runs above were made one after the other, so any change in the service&#39;s speed between them looks like a cost of grounding. In the improved run, the median time inside the Worker of the 8 model-answered requests in each round varied from 448 ms to 776 ms, against 389 ms to 443 ms in the baseline run (<code>eval/COMPARISON.md</code>). That suggested such changes. <code>npm run eval:latency</code> (<code>eval/LATENCY_CHECK.md</code>, 15:21:49 UTC) therefore sent every model case to a baseline server and a grounded server in the same round, alternating which went first: 40 pairs. The result (measured):</p>
+<table>
+<thead>
+<tr>
+<th>Measure (ms)</th>
+<th align="right">Baseline</th>
+<th align="right">Improved</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>p50 response time</td>
+<td align="right">870.6</td>
+<td align="right">749.9</td>
+</tr>
+<tr>
+<td>p95 response time</td>
+<td align="right">1924.8</td>
+<td align="right">2133.0</td>
+</tr>
+<tr>
+<td>p50 decision time inside the Worker</td>
+<td align="right">648.0</td>
+<td align="right">528.0</td>
+</tr>
+<tr>
+<td>p95 decision time inside the Worker</td>
+<td align="right">1702.0</td>
+<td align="right">1901.0</td>
+</tr>
+</tbody></table>
+<p>The grounded variant was slower in 23 of the 40 pairs. The median difference per pair was +7.8 ms (nearest-rank: the 20th of the 40 sorted differences). The mean of the two middle values is +20.4 ms, and the mean difference is −23.8 ms. Measured side by side, grounding adds little latency compared with how much the service&#39;s own speed varies. Most of the doubling in the table above came from that variation, not from the extra tokens. Every decision in this check was the same as in the evaluation run of its variant.</p>
+<p><strong>Cases That Improved:</strong> T02, T05, T06, T09, T10; no case became worse.</p>
+<ul>
+<li><strong>T02, forgot password:</strong> urgency high → normal. KB05 says that a sign-in problem with no deadline today is normal.</li>
+<li><strong>T05, &quot;projector broken&quot;:</strong> urgency low → normal. KB02 and KB05 say that a fault with no time mentioned is normal.</li>
+<li><strong>T06, camera needed tomorrow:</strong> urgency high → normal. KB02 and KB05 make &quot;needed tomorrow&quot; normal. This is the same mistake as A6 input 9.</li>
+<li><strong>T09, fine dispute:</strong> general_question / low → booking_change / normal. Of the records sent for T09, only KB09 contains that rule. KB01 states it too, but it was not retrieved, because the message has no booking keyword. The message alone suggests a general question.</li>
+<li><strong>T10, a bus:</strong> urgency normal → low. KB04 and KB05 make requests outside the platform low urgency, despite &quot;tomorrow&quot;.</li>
+</ul>
+<p><strong>Cases That Became Worse:</strong> none. The five cases that already passed kept the same decision.</p>
+<p><strong>Trade-offs:</strong></p>
+<ul>
+<li><strong>Tokens and cost:</strong> every decision reads about 330 more input tokens (+64%), so the estimated cost rises from $0.000122 to $0.000201 per decision. On the free plan, the daily allowance now covers about 550 decisions instead of about 900.</li>
+<li><strong>Latency:</strong> the sequential runs show p95 +109%, but the interleaved check shows only a small difference. The grounded variant was slower in 23 of 40 pairs, with a nearest-rank median of +7.8 ms and a mean of −23.8 ms.</li>
+<li><strong>Complexity and maintenance:</strong> the guidelines are now part of the system. Each rule change must be made in <code>src/knowledge-base.json</code> and re-evaluated, and the keyword lists need maintenance in two languages.</li>
+<li><strong>Retrieval misses:</strong> the keyword retrieval missed the equipment record for T06 (&quot;camra&quot; is misspelled). For T09 it missed KB01, one of the three records its expected result cites; KB09, which was sent, states the same rule. It also sent the booking-changes record for T02, because &quot;booking system&quot; contains &quot;booking&quot;. These cases still passed. Whether the missing or extra records changed the model&#39;s answer was not tested, and on real messages a missed rule could change a decision.</li>
+<li><strong>False matches in Thai:</strong> the fallback ignores เสีย inside words such as เสียใจ (sorry) and เสียค่า (to pay a fee). The knowledge base holds plain keywords, so KB02, the equipment-faults record, is also sent for such messages. No evaluation case contains these words, so the results above are not affected. Fixing it needs a new version of the knowledge base, evaluated again; the frozen version was not changed.</li>
+<li><strong>Two urgency definitions:</strong> the urgency question keeps its A6 wording, for example &quot;Low: no deadline mentioned, can wait several days&quot;. With grounding on, KB02 and KB05 are sent next to it and settle the cases that this wording leaves open, such as a fault with no time mentioned. In this run the model followed the guidelines in all 40 model decisions, but nothing guarantees that for other messages. Aligning the question wording with KB05 would be a separate change, &quot;better decision instructions or criteria&quot;, with its own evaluation.</li>
+<li><strong>A circular evaluation:</strong> the expected results were derived from the same guidelines that the improved variant sends to the model. The 100% shows that the model follows the rules it is given. It does not show that the rules, or the expectations, are what real users and staff need.</li>
+</ul>
+<p><strong>Is it suitable for production?</strong> Not yet, although the change is worth keeping.</p>
+<ul>
+<li>It fixed every systematic error the baseline made, with no regressions, at a small cost.</li>
+<li>The evaluation is too small: 10 cases, written, like the guidelines, by the same author.</li>
+<li>Before production it needs a larger set of real messages, labelled by staff who did not write the guidelines, with Thai and misspelled messages included.</li>
+<li>The retrieval needs to handle misspellings.</li>
+<li>The guidelines need an owner and a version that is evaluated together with the router.</li>
+<li>The A6 production risks still apply: no login, no rate limit, and personal data sent to the model.</li>
+</ul>
+<p>The setting allows a gradual rollout. Run with grounding on for a sample of real traffic, compare with staff decisions, and switch it off again if needed.</p>
+<p><strong>Conclusion:</strong> the improvement was worthwhile on this evidence. Accuracy rose from 50% to 100% on the same 10 frozen cases. Every repetition was consistent, and no case got worse. The cost was +64% input tokens (estimated +64% cost), and the latency was nearly unchanged when measured side by side. Because the expected results and the guidelines share an author, the result should be read as &quot;the model now follows the platform&#39;s documented rules&quot;. The next evaluation has to show that those rules match real support work.</p>
+<h2>7. Engineering Reflection</h2>
+<p>This reflection was drafted by the AI from the recorded evidence.</p>
+<p><strong>What I learned:</strong></p>
+<ul>
+<li><strong>Numbers and categories.</strong> The A6 test run reported &quot;30 passed, 0 failed&quot;, because a routing case passed on its queue alone (13 of 13). The urgency (11 of 13) and all three decisions together (9 of 13) were reported, but they failed no case. Requiring all three decisions for a pass, on new cases with expectations taken from written rules, gave 50%. The breakdown by field pointed straight at urgency.</li>
+<li><strong>Repeat and freeze.</strong> Repeating every case showed that the decisions do not vary at all for the same input, so one repetition would have given the same accuracy. Latency, however, varies a lot. Freezing the cases and the knowledge base by hash before the first run kept the comparison honest.</li>
+<li><strong>Checks that guard the setup.</strong> Both measuring scripts refuse to record results from a server running the wrong variant. During the latency check that guard caught a real setup fault: two local servers with the same Worker name answered for each other.</li>
+<li><strong>Comparing over time.</strong> Comparing two runs made at different times can mislead. The p95 latency doubled between the sequential runs but hardly changed when the variants were interleaved.</li>
+</ul>
+<p><strong>Why a few successful examples are insufficient:</strong></p>
+<ul>
+<li><strong>Successes hide systematic errors.</strong> The examples that succeed tend to be the ones the author expected to work, while failures often sit in categories nobody tried. Here, 9 of 10 queue decisions were right, but the urgency was wrong in half of the cases.</li>
+<li><strong>One run measures nothing.</strong> A single run cannot show whether a result is stable, or what latency and cost to expect.</li>
+<li><strong>Missing categories.</strong> The baseline failed on a two-word message and on misspellings (T05, T06) and on both ambiguous requests (T09, T10). The fallback matters only when the model itself fails (T07, T08). One normal case (T02) failed too, while the Thai case passed. Such cases appear only when the set includes them on purpose.</li>
+</ul>
+<p><strong>What I would evaluate next:</strong></p>
+<ul>
+<li><strong>Independent labels.</strong> A larger set of real support messages, labelled by staff who did not write the guidelines, with precision and recall per queue and per urgency level.</li>
+<li><strong>A held-out part.</strong> Part of that set kept out of sight while the guidelines are edited, to detect tuning to the test.</li>
+<li><strong>Robustness.</strong> Misspellings, Thai and mixed-language messages, and injection attempts, plus the quality of the retrieval itself: did it select the record that decided the case?</li>
+<li><strong>The thresholds.</strong> Calibration of the 0.5 and 0.6 thresholds against the cost of each kind of mistake.</li>
+<li><strong>Operations.</strong> Latency and cost under concurrent load and when the daily allowance runs out, and a shadow run in production comparing decisions with staff before switching the setting on for everyone.</li>
+</ul>
+<h2>8. Evidence and References</h2>
+<p><strong>Execution evidence</strong> (all in the project folder):</p>
+<ul>
+<li><strong>Dataset:</strong> <code>eval/eval-cases.json</code>, the 10 cases with expected results and reasons.</li>
+<li><strong>Baseline run:</strong> <code>eval/BASELINE_EVIDENCE.md</code>, the execution log: the curl response time of all 50 requests and, for each case, the command and the response (status line, content-type and CORS headers, whole body) of its first repetition. <code>eval/results/baseline.json</code> holds every measurement and the decision returned by each of the 50 requests.</li>
+<li><strong>Improved run:</strong> <code>eval/IMPROVED_EVIDENCE.md</code> and <code>eval/results/improved.json</code>, in the same form.</li>
+<li><strong>Comparison:</strong> <code>eval/COMPARISON.md</code>.</li>
+<li><strong>Latency check:</strong> <code>eval/LATENCY_CHECK.md</code> and <code>eval/results/latency-check.json</code>, the interleaved check.</li>
+<li><strong>Freeze record:</strong> <code>eval/FREEZE.txt</code>, the hashes of the dataset and the knowledge base, recorded before the first run.</li>
+<li><strong>Unit checks:</strong> <code>eval/GROUNDING_UNIT_EVIDENCE.md</code>, 22 checks of the improvement. <code>eval/A6_UNIT_ON_A7_EVIDENCE.md</code>, the 78 A6 checks run on the A7 code, with the hashes of the copy they ran on in <code>eval/A6_UNIT_ON_A7_INPUTS.sha256</code>.</li>
+<li><strong>Code change:</strong> <code>eval/improvement.diff</code>, the change against A6.</li>
+<li><strong>Scripts:</strong> <code>eval/run-eval.mjs</code>, <code>eval/compare.mjs</code> and <code>eval/latency-check.mjs</code> reproduce the two runs, the comparison and the latency check. <code>tests/grounding.unit.mjs</code> rewrites <code>eval/GROUNDING_UNIT_EVIDENCE.md</code>. <code>tests/support-router.unit.mjs</code> runs the 78 A6 checks, but it writes the A6 file <code>SUPPORT_ROUTER_UNIT_EVIDENCE.md</code>, which is why <code>eval/A6_UNIT_ON_A7_EVIDENCE.md</code> was made on a copy (section 4). The README lists these commands in its table under &quot;Run it&quot;, and its section &quot;Evaluation and the one improvement&quot; shows the servers each run needs. One known limit: the runner takes the differences and the actual decision it logs from the first repetition of each case. In these runs every repetition gave the same decision, so the logs are complete; a run with differing repetitions would need the runner to list each one.</li>
+</ul>
+<p><strong>References:</strong></p>
+<ul>
+<li>Assignment A7 brief (<code>assignment_9.md</code>) and submission template (<code>assignment9_template.md</code>), 1305308 Platform Development, Week 09. No lecture slides were consulted for A7.</li>
+<li>The A6 report of this project, <code>docs/A6/A6_6731503052.pdf</code>.</li>
+<li>Cloudflare, <em>Workers AI: Clef</em> (request and answer format; $0.24 per million input tokens, output free): <a href="https://developers.cloudflare.com/workers-ai/models/clef/">https://developers.cloudflare.com/workers-ai/models/clef/</a></li>
+<li>Cloudflare, <em>Workers AI pricing</em> (10,000 free neurons per day; Clef 21,818 neurons per million input tokens): <a href="https://developers.cloudflare.com/workers-ai/platform/pricing/">https://developers.cloudflare.com/workers-ai/platform/pricing/</a></li>
+</ul>
+<p><strong>AI tools used and how.</strong> Claude Code (Anthropic, model Claude Opus 5.5) produced this assignment in the same session as A6, on 26 and 27 October 2026, from the assignment text and the template.</p>
+<ul>
+<li><strong>What the AI produced:</strong> it wrote the knowledge base and the evaluation cases with their expected results, and froze both before any run. It also wrote the retrieval, the setting, the evaluation scripts and the tests.</li>
+<li><strong>What the AI ran:</strong> it ran every measurement, analysed the results and wrote this report. At the student&#39;s request, it also committed the work to the GitHub branch named at the top, under the student&#39;s account.</li>
+<li><strong>What the log records:</strong> <code>AI_LOG.md</code>, part 3, records who did what, what was and was not verified, and what went wrong on the way. One example is the two dev servers that answered for each other during the first attempt at the latency check. It also lists what an AI review of this report found and what was corrected afterwards.</li>
+<li><strong>The student&#39;s part:</strong> the student gave the task and is responsible for understanding and checking the work. <code>AI_LOG.md</code>, part 3, section G is for the student&#39;s own checks; it had not been filled in when this report was generated.</li>
+</ul>
+<h2>9. Submission Checklist</h2>
+<p>These boxes were ticked by the AI when this report was generated, to show where each item is; the student confirms them before submitting.</p>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> Same capability as Week 08 (the A6 router; with the setting off the request is exactly the A6 request)</li>
+<li><input checked="" disabled="" type="checkbox"> At least 5 knowledge records (10, section 1; <code>src/knowledge-base.json</code>)</li>
+<li><input checked="" disabled="" type="checkbox"> 10 evaluation cases with expected results (section 2; <code>eval/eval-cases.json</code>)</li>
+<li><input checked="" disabled="" type="checkbox"> Baseline results completed (section 3)</li>
+<li><input checked="" disabled="" type="checkbox"> Exactly one improvement applied (section 4: grounding context, <code>ROUTER_GROUNDING</code>)</li>
+<li><input checked="" disabled="" type="checkbox"> After-improvement results completed (section 5)</li>
+<li><input checked="" disabled="" type="checkbox"> Before/after comparison included (section 6)</li>
+<li><input checked="" disabled="" type="checkbox"> Actual evidence and reflection attached (sections 6 to 8; <code>eval/</code>)</li>
+</ul>
+
+</body></html>

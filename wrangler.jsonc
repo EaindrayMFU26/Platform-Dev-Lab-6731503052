@@ -25,9 +25,11 @@
 
   // Settings of the router. Override locally without editing this file:
   //   npx wrangler dev --var ROUTER_MODEL:@cf/cloudflare/no-such-model   (forces the fallback)
+  //   npm run dev -- --var ROUTER_GROUNDING:on   (A7: send the relevant support guidelines to the model)
   "vars": {
     "ROUTER_MODEL": "@cf/cloudflare/clef",
     "ROUTER_TIMEOUT_MS": "8000",
-    "ROUTER_MIN_CONFIDENCE": "0.6"
+    "ROUTER_MIN_CONFIDENCE": "0.6",
+    "ROUTER_GROUNDING": "off"
   }
 }

@@ -17,7 +17,11 @@
     "test:support": "node tests/run-support-tests.mjs",
     "test:support:fallback": "node tests/run-support-tests.mjs http://localhost:8789/api --mode fallback --reason model_error",
     "test:support:timeout": "node tests/run-support-tests.mjs http://localhost:8790/api --mode fallback --reason model_timeout",
-    "test:support:unit": "node tests/support-router.unit.mjs"
+    "test:support:unit": "node tests/support-router.unit.mjs",
+    "test:grounding:unit": "node tests/grounding.unit.mjs",
+    "eval": "node eval/run-eval.mjs",
+    "eval:compare": "node eval/compare.mjs",
+    "eval:latency": "node eval/latency-check.mjs"
   },
   "dependencies": {
     "hono": "^4.13.13"

@@ -5,14 +5,17 @@ The same equipment cannot be booked for overlapping times.
 
 Midterm practical lab test, 1305308 Platform Development. Student ID 6731503052. Since assignment
 A6 (week 8) the same API also routes support messages with an AI decision model: see
-[Support request router](#support-request-router-ai-decision-capability).
+[Support request router](#support-request-router-ai-decision-capability). Assignment A7 (week 9)
+evaluated that router and added one improvement, grounding context: see
+[Evaluation and the one improvement](#evaluation-and-the-one-improvement-assignment-a7).
 
 - **Stack:** TypeScript, Hono, Cloudflare Workers, Cloudflare D1 (SQLite), Cloudflare Workers AI
 - **Live API (Cloudflare):** <https://equipment-booking-api.medcard-api.workers.dev/api>, for
   example [/api/equipment](https://equipment-booking-api.medcard-api.workers.dev/api/equipment)
 - **Base API URL used for testing:** `https://equipment-booking-api.medcard-api.workers.dev/api`
   (deployed) and `http://localhost:8787/api` (local)
-- **Source code:** <https://github.com/EaindrayMFU26/Platform-Dev-Lab-6731503052>
+- **Source code:** <https://github.com/EaindrayMFU26/Platform-Dev-Lab-6731503052>; the A6 and A7 work
+  is on the branch `a6-a7-support-router`
 
 | Document | Contents |
 |---|---|
@@ -21,11 +24,16 @@ A6 (week 8) the same API also routes support messages with an AI decision model:
 | [CURL_GUIDE_EVIDENCE.md](CURL_GUIDE_EVIDENCE.md) | The nine commands of the instructor's cURL guide, run as written, with their output |
 | [TEST_EVIDENCE.md](TEST_EVIDENCE.md) | 32 further test cases with the commands and the responses they produced |
 | [QUALITY_GATE_REVIEW.md](QUALITY_GATE_REVIEW.md) | Quality Gate review: findings, fixes and evidence |
-| [AI_LOG.md](AI_LOG.md) | How AI was used and what was verified (midterm, and assignment A6) |
+| [AI_LOG.md](AI_LOG.md) | How AI was used and what was verified (midterm, A6 and A7) |
 | [docs/A6/A6_6731503052.md](docs/A6/A6_6731503052.md) | Assignment A6 report: the AI support-request router ([PDF](docs/A6/A6_6731503052.pdf)) |
 | [SUPPORT_ROUTER_EVIDENCE.md](SUPPORT_ROUTER_EVIDENCE.md) | A6: 13 support messages routed by the real model, plus the ticket flow and validation; 30 cases |
 | [SUPPORT_ROUTER_FALLBACK_EVIDENCE.md](SUPPORT_ROUTER_FALLBACK_EVIDENCE.md), [SUPPORT_ROUTER_TIMEOUT_EVIDENCE.md](SUPPORT_ROUTER_TIMEOUT_EVIDENCE.md) | A6: the same 30 cases with the model failing, and with the model too slow: every decision from the fallback |
 | [SUPPORT_ROUTER_UNIT_EVIDENCE.md](SUPPORT_ROUTER_UNIT_EVIDENCE.md) | A6: 78 unit checks of validation, timeouts, invalid answers, settings and the keyword rules |
+| [docs/A7/A7_6731503052.md](docs/A7/A7_6731503052.md) | Assignment A7 report: evaluation of the router and the one improvement ([PDF](docs/A7/A7_6731503052.pdf)) |
+| [eval/eval-cases.json](eval/eval-cases.json) | A7: the 10 evaluation cases with their expected results |
+| [eval/BASELINE_EVIDENCE.md](eval/BASELINE_EVIDENCE.md), [eval/IMPROVED_EVIDENCE.md](eval/IMPROVED_EVIDENCE.md), [eval/COMPARISON.md](eval/COMPARISON.md) | A7: the two evaluation runs (5 repetitions of every case) and their comparison |
+| [eval/LATENCY_CHECK.md](eval/LATENCY_CHECK.md), [eval/GROUNDING_UNIT_EVIDENCE.md](eval/GROUNDING_UNIT_EVIDENCE.md), [eval/improvement.diff](eval/improvement.diff) | A7: the interleaved latency check, 22 unit checks of the improvement, and the code change against A6 |
+| [eval/FREEZE.txt](eval/FREEZE.txt), [eval/A6_UNIT_ON_A7_EVIDENCE.md](eval/A6_UNIT_ON_A7_EVIDENCE.md) | A7: the hashes of the cases and the knowledge base, recorded before the first run; the 78 A6 unit checks run on the A7 code (on a copy whose files are listed in [eval/A6_UNIT_ON_A7_INPUTS.sha256](eval/A6_UNIT_ON_A7_INPUTS.sha256)) |
 
 ## Run it
 
@@ -56,6 +64,9 @@ because they load the TypeScript module directly.
 | `npm run dev:fallback`, `npm run test:support:fallback` | Start a server whose model id does not exist (port 8789) and run the 30 cases against it: every decision must come from the fallback, with reason `model_error` |
 | `npm run dev:timeout`, `npm run test:support:timeout` | The same with a 1 ms model timeout (port 8790): reason `model_timeout` |
 | `npm run test:support:unit` | 78 unit checks of the router with fake models, no server needed |
+| `npm run test:grounding:unit` | A7: 22 unit checks of the knowledge base, the retrieval and `ROUTER_GROUNDING`, no server needed |
+| `npm run eval -- --variant baseline` or `improved` | A7: run the 10 evaluation cases 5 times each against the three servers (see [below](#evaluation-and-the-one-improvement-assignment-a7)) |
+| `npm run eval:compare`, `npm run eval:latency` | A7: compare the two runs; measure the latency of both variants side by side |
 | `npm run typecheck` | Generate the Worker types and type-check the code |
 | `npm run db:migrate:remote` | Apply the migrations to the deployed D1 database |
 | `npm run deploy` | Deploy the Worker to Cloudflare |
@@ -240,7 +251,9 @@ Settings are `vars` in [wrangler.jsonc](wrangler.jsonc) and can be overridden fo
 `npx wrangler dev --var NAME:value`: `ROUTER_MODEL` (default `@cf/cloudflare/clef`),
 `ROUTER_TIMEOUT_MS` (8000; whole milliseconds from 1 to 60000) and `ROUTER_MIN_CONFIDENCE` (0.6, a
 decimal from 0 to 1; below it a person must look even when the model answered). A blank, malformed
-or out-of-range value is ignored and the default is used.
+or out-of-range value is ignored and the default is used. A7 added `ROUTER_GROUNDING` (default
+`off`; `on` sends the relevant support guidelines to the model, see
+[below](#evaluation-and-the-one-improvement-assignment-a7)).
 
 The model always runs on Cloudflare, also during `npm run dev`, through the login made with
 `npx wrangler login`. It counts against the account's free Workers AI allowance of 10,000 neurons
@@ -269,6 +282,77 @@ the engineering reflection, is the assignment report
 | Task 3: deterministic fallback, demonstrated | `fallbackDecision()` and `keywordRoute()`; [SUPPORT_ROUTER_FALLBACK_EVIDENCE.md](SUPPORT_ROUTER_FALLBACK_EVIDENCE.md), [SUPPORT_ROUTER_TIMEOUT_EVIDENCE.md](SUPPORT_ROUTER_TIMEOUT_EVIDENCE.md), [SUPPORT_ROUTER_UNIT_EVIDENCE.md](SUPPORT_ROUTER_UNIT_EVIDENCE.md) |
 | Task 4: engineering reflection | Report, section 4 |
 | Use of AI | [AI_LOG.md](AI_LOG.md), part 2 |
+
+The A6 report and the four `SUPPORT_ROUTER_*EVIDENCE.md` files describe the router as it was before
+A7. A7 added the `ROUTER_GROUNDING` setting (default off) and the field `details.contextRecords`
+(always empty with grounding off). With grounding off, the request to the model is still exactly the
+A6 request; a unit check compares it with the request recorded in A6. The A6 state of the project is
+the commit `fc9c144`, "Add the AI support-request router (assignment A6)".
+
+## Evaluation and the one improvement (assignment A7)
+
+A7 evaluated the A6 router on a fixed set of 10 cases and then changed exactly one thing: the
+router can send the support guidelines that are relevant to a message to the model, as
+`state.guidelines`.
+
+- **Knowledge base:** [src/knowledge-base.json](src/knowledge-base.json), 10 support guidelines
+  written for this platform (queues, urgency levels, safety, when a person must read, booking rules,
+  fees, equipment).
+- **Retrieval:** [src/grounding.ts](src/grounding.ts). Two records are always sent (the urgency
+  levels and the rule for when a person must read). Up to three more are chosen by how many of their
+  keywords occur in the message. The matching functions are the fallback's, with separate keyword
+  lists of plain words. No vector database is used.
+- **Switch:** `ROUTER_GROUNDING` (default `off`). With it off, the request is exactly the A6
+  request. The only other change is the response field `details.contextRecords`, which lists the
+  record ids sent.
+- **Evaluation:** [eval/eval-cases.json](eval/eval-cases.json) holds 3 normal, 3 edge, 2 fallback and
+  2 difficult cases. The expected results come from the knowledge base and were frozen before any
+  run ([eval/FREEZE.txt](eval/FREEZE.txt) holds the hashes). [eval/run-eval.mjs](eval/run-eval.mjs)
+  sends every case 5 times as real curl requests and records the decisions, the response times and
+  the token usage.
+
+To repeat the evaluation, run the three servers and the runner, once per variant:
+
+```bash
+# Baseline: grounding off (the A6 capability)
+npm run dev               # terminal 1, port 8787
+npm run dev:fallback      # terminal 2, port 8789: the model call fails (case T07)
+npm run dev:timeout       # terminal 3, port 8790: the model never answers in time (case T08)
+npm run eval -- --variant baseline
+
+# Improved: stop the servers and start the same three with  -- --var ROUTER_GROUNDING:on
+npm run eval -- --variant improved
+npm run eval:compare      # eval/COMPARISON.md
+```
+
+Result on 26 October 2026 ([eval/COMPARISON.md](eval/COMPARISON.md)):
+
+| Metric | Baseline | Improved |
+|---|---|---|
+| Accuracy (10 cases, every repetition correct) | 5/10 = 50% | 10/10 = 100% |
+| p95 response time, 50 requests each (measured) | 937.8 ms | 1962.6 ms |
+| Input tokens per decision (measured) | 509 | 837 |
+| Cost per decision (estimate: tokens × $0.24 per million) | $0.000122 | $0.000201 |
+
+The two runs were made one after the other, so the latency comparison also contains changes in the
+service's speed. [eval/LATENCY_CHECK.md](eval/LATENCY_CHECK.md) sent every case the model answers
+(8 of the 10; not the fallback cases T07 and T08) to both variants in the same round. There the p95
+was 1924.8 ms without and 2133.0 ms with grounding. The grounded variant was slower in 23 of 40
+pairs; the median difference per pair was 7.8 ms (nearest-rank, the 20th of 40), and the mean
+difference was -23.8 ms. Two local servers need different Worker names for that check (see
+the header of [eval/latency-check.mjs](eval/latency-check.mjs)).
+
+To repeat the latency check, stop the servers above and start the two variants side by side:
+
+```bash
+npm run dev               # terminal 1: baseline (grounding off), port 8787
+npm run dev -- --name equipment-booking-api-grounded --port 8791 --var ROUTER_GROUNDING:on
+                          # terminal 2: improved, port 8791
+npm run eval:latency      # eval/LATENCY_CHECK.md (option: -- --rounds <n>, default 5)
+```
+
+The analysis, the limits of this evaluation and the reflection are in the A7 report
+[docs/A7/A7_6731503052.md](docs/A7/A7_6731503052.md).
 
 ## Connect a frontend tester (CORS)
 
@@ -367,6 +451,10 @@ src/index.ts              routes, SQL statements, CORS, error handling
 src/validation.ts         validation of booking payloads (no database, no HTTP)
 src/support-router.ts     A6: the AI support-request router: questions, model call, validation of the
                           answer, policy, keyword fallback, input validation (no database, no HTTP)
+src/grounding.ts          A7: selection of the support guidelines sent to the model (ROUTER_GROUNDING)
+src/knowledge-base.json   A7: the 10 support guidelines
+src/text-match.ts         keyword matching shared by the fallback and the retrieval (moved out of
+                          support-router.ts in A7: same logic, now exported, \u escapes)
 migrations/               D1 schema and seed data (0003 adds support_tickets)
 tests/curl.mjs            curl helpers shared by the test runners
 tests/curl-guide.sh       the instructor's nine curl commands, writes CURL_GUIDE_EVIDENCE.md
@@ -375,10 +463,16 @@ tests/support-cases.mjs   A6: the 13 routing inputs and the decisions expected f
 tests/run-support-tests.mjs   A6: 30 HTTP cases, model mode or fallback mode, writes SUPPORT_ROUTER_*EVIDENCE.md
 tests/support-router.unit.mjs A6: 78 unit checks with fake models, writes SUPPORT_ROUTER_UNIT_EVIDENCE.md
 tests/fixtures/           A6: a recorded raw answer of the model, used by the unit tests
+tests/grounding.unit.mjs  A7: 22 unit checks of the improvement, writes eval/GROUNDING_UNIT_EVIDENCE.md
+eval/                     A7: eval-cases.json, the runner (run-eval.mjs), compare.mjs, latency-check.mjs,
+                          the results (results/*.json), the execution logs (*_EVIDENCE.md, COMPARISON.md,
+                          LATENCY_CHECK.md), FREEZE.txt (the hashes frozen before the first run),
+                          A6_UNIT_ON_A7_EVIDENCE.md and improvement.diff (the code change against A6)
 tools/browser-check.html  one-page CORS check for a real browser
 docs/A6/                  A6 report (Markdown source, HTML, PDF), architecture.svg, jev-request.json
                           (the decision request in Jev form), build-report.mjs (Markdown to HTML;
                           its header gives the PDF step)
+docs/A7/                  A7 report (Markdown source, HTML, PDF), grounding.svg, build-report.mjs
 wrangler.jsonc            Worker, D1 and Workers AI configuration, router settings
 ```
 

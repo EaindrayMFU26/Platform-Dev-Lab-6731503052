@@ -247,6 +247,14 @@ in the [A6 report](docs/A6/A6_6731503052.md). These routes follow the convention
 and out, every error exactly `{ "error": "<message>" }`, 400 and 404 with the meanings under
 [Why 400, 404 and 409](#why-400-404-and-409).
 
+Assignment A7 added one setting, `ROUTER_GROUNDING` (default `off`). With `on`, the support
+guidelines that are relevant to the message ([src/grounding.ts](src/grounding.ts),
+[src/knowledge-base.json](src/knowledge-base.json)) are sent to the model as part of the request,
+and the decision lists their ids in `details.contextRecords`. With `off` the request to the model is
+the A6 request and `details.contextRecords` is empty. Nothing else in these routes changed; the
+evaluation is in the [A7 report](docs/A7/A7_6731503052.md). The examples below were recorded in A6,
+before the field existed.
+
 ### Support request (input)
 
 | Field | Type | Rules |
@@ -277,6 +285,7 @@ Both the model and the fallback produce exactly this shape.
 | `details.latencyMs` | integer | Time spent deciding, measured inside the Worker. |
 | `details.inputTokens` | integer or null | Tokens the model read, as reported by the service; `null` for the fallback. |
 | `details.reportedModel` | string or null | The model name reported by the service (`clef`); `null` for the fallback. |
+| `details.contextRecords` | array of strings | Added in A7. The ids of the knowledge records sent with the request to the model, for example `["KB05", "KB07", "KB09", "KB10"]`. Empty when `ROUTER_GROUNDING` is off, and when no request was sent (no AI binding). A fallback after a failed or timed-out call still lists the records that were sent with that call. |
 
 A fallback decision is still a success (200 or 201): the capability always answers, and `source`
 and `fallbackReason` say how. The output is validated before it is returned: a model answer with an

@@ -21,6 +21,7 @@ type Bindings = {
   ROUTER_MODEL?: string
   ROUTER_TIMEOUT_MS?: string
   ROUTER_MIN_CONFIDENCE?: string
+  ROUTER_GROUNDING?: string
 }
 type AppContext = Context<{ Bindings: Bindings }>
 
